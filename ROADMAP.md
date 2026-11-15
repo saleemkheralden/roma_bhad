@@ -110,8 +110,10 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 
 ### Phase 1: MVP
 - [x] Scaffold the app (Next.js 16 + TypeScript + Tailwind 4, `dir="rtl"`, Heebo font, PWA manifest)
-- [ ] Add Impeccable (dev dependency) and create the design context
-- [ ] `git init` + private GitHub repo + link to Vercel; first preview deploy
+- [x] Add Impeccable (dev dependency + project skills)
+- [ ] Create the design context (`/impeccable init`)
+- [x] `git init` + private GitHub repo + link to Vercel; first deploy (behind Vercel login)
+- [ ] Give the Vercel GitHub app access to the repo, so every push deploys
 - [ ] Create the Supabase project; tables `users`, `teams`, `memberships`, `links`
 - [ ] Google sign-in
 - [ ] Create a team, and join one with an invite code or link

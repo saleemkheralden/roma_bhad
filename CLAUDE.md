@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 1, MVP setup. The Next.js project is scaffolded; git, GitHub and the Vercel link come next. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 1, MVP setup. Scaffolded, in a private GitHub repo (`saleemkheralden/team-hub`), and linked to the Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
@@ -50,4 +50,6 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `npm run dev`: start the dev server at http://localhost:3000
 - `npm run build`: production build (run before committing larger changes)
 - `npm run lint`: ESLint
-- _Still to add:_ tests, Supabase migrations, deploy (Vercel deploys on git push once linked)
+- `vercel deploy -y --no-wait`: deploy from the CLI (until GitHub auto-deploy is connected)
+- `npx impeccable detect src`: scan the UI for design issues
+- _Still to add:_ tests, Supabase migrations
