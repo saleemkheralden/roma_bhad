@@ -33,6 +33,7 @@ export const strings = {
     badCode: "הקוד לא נכון או שפג תוקפו.",
     sendFailed: "לא הצלחנו לשלוח קוד. בדקו את הכתובת ונסו שוב.",
     googleFailed: "הכניסה עם Google נכשלה. נסו שוב.",
+    googleOnly: "בשלב זה הכניסה היא עם חשבון Google בלבד.",
   },
   onboarding: {
     title: "עוד אין לך צוות",

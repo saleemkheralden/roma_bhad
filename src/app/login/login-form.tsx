@@ -13,7 +13,8 @@ function safeNext(next: string | null) {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
 }
 
-export function LoginForm() {
+/** emailEnabled: email sign-in needs custom SMTP in production (EMAIL_LOGIN=on). */
+export function LoginForm({ emailEnabled }: { emailEnabled: boolean }) {
   const router = useRouter();
   const params = useSearchParams();
   const next = safeNext(params.get("next"));
@@ -103,6 +104,18 @@ export function LoginForm() {
           {s.otherEmail}
         </button>
       </form>
+    );
+  }
+
+  if (!emailEnabled) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Button type="button" onClick={google}>
+          {s.google}
+        </Button>
+        <ErrorText>{error}</ErrorText>
+        <p className="text-sm text-ink-2">{s.googleOnly}</p>
+      </div>
     );
   }
 

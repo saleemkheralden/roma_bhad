@@ -14,7 +14,8 @@ export default function LoginPage() {
       <section className="mx-auto w-full max-w-md flex-1 px-4 py-8">
         <h1 className="mb-6 text-2xl font-extrabold">{strings.login.title}</h1>
         <Suspense>
-          <LoginForm />
+          {/* Email sign-in sends mail through Supabase: off unless EMAIL_LOGIN=on (needs custom SMTP online). */}
+          <LoginForm emailEnabled={process.env.EMAIL_LOGIN === "on"} />
         </Suspense>
       </section>
     </main>
