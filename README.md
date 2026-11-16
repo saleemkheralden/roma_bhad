@@ -1,4 +1,4 @@
-# מרכז הצוות (Team Hub)
+# רומא (Roma)
 
 A Hebrew, mobile-first web app for officers-course teams: roster, roll call, team and private tasks, calendar, sheets and links in one place.
 

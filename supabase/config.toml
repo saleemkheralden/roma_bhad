@@ -250,6 +250,15 @@ otp_expiry = 3600
 # sender_name = "Admin"
 
 # Uncomment to customize email template
+# Roma signs in with a 6-digit code (not a link): every email carries {{ .Token }}.
+[auth.email.template.magic_link]
+subject = "קוד הכניסה שלך לרומא"
+content_path = "./supabase/templates/code.html"
+
+[auth.email.template.confirmation]
+subject = "קוד הכניסה שלך לרומא"
+content_path = "./supabase/templates/code.html"
+
 # [auth.email.template.invite]
 # subject = "You have been invited"
 # content_path = "./supabase/templates/invite.html"

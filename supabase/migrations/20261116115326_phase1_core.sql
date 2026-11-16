@@ -43,7 +43,7 @@ create table public.team_members (
 create index team_members_team_id_idx on public.team_members (team_id, sort_order, first_name);
 create index team_members_user_id_idx on public.team_members (user_id);
 
--- Configurable role list per team (א' צוות, סמל, קל"ג, קמב"צ ...).
+-- Configurable role list per team (א׳ צוות, סמל, קל״ג, קמב״צ ...).
 create table public.team_roles (
   id bigint generated always as identity primary key,
   team_id bigint not null references public.teams (id) on delete cascade,
@@ -415,10 +415,10 @@ begin
 
   insert into public.team_roles (team_id, name, is_command, sort_order)
   values
-    (v_team_id, 'א'' צוות', true, 1),
+    (v_team_id, 'א׳ צוות', true, 1),
     (v_team_id, 'סמל', true, 2),
-    (v_team_id, 'קל"ג', true, 3),
-    (v_team_id, 'קמב"צ', true, 4);
+    (v_team_id, 'קל״ג', true, 3),
+    (v_team_id, 'קמב״צ', true, 4);
 
   return v_team_id;
 end;

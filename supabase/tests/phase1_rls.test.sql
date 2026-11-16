@@ -24,7 +24,7 @@ select lives_ok($$ select public.create_team('צוות 1', 'אבי', 'כהן') $
 select is((select count(*)::int from public.teams), 1, 'A sees their team');
 select is((select is_admin from public.team_members where user_id = auth.uid()), true, 'creator is admin');
 select is((select count(*)::int from public.team_roles), 4, 'default roles were created');
-select is((select count(*)::int from public.team_roles where name = 'קל"ג'), 1, 'default roles include קל"ג');
+select is((select count(*)::int from public.team_roles where name = 'קל״ג'), 1, 'default roles include קל״ג');
 
 -- A adds an unclaimed roster entry
 select lives_ok($$ insert into public.team_members (team_id, first_name, last_name)
@@ -36,7 +36,8 @@ select throws_ok($$ insert into public.attendance_sessions (team_id) select id f
 
 -- Remember the invite code for the others
 select pg_temp.as_postgres();
-create temp table ctx as select id as team_id, invite_code from public.teams;
+create temp table ctx as select id as team_id, invite_code from public.teams
+  where created_by = '00000000-0000-0000-0000-00000000000a';
 grant select on ctx to authenticated;
 
 -- Outsider D -------------------------------------------------------------------
@@ -76,7 +77,7 @@ select pg_temp.as_user('00000000-0000-0000-0000-00000000000a');
 insert into public.role_assignments (team_id, role_id, member_id, start_date, end_date)
 select r.team_id, r.id, m.id, private.today(), private.today()
 from public.team_roles r, public.team_members m
-where r.name = 'א'' צוות' and m.first_name = 'בני';
+where r.name = 'א׳ צוות' and m.first_name = 'בני';
 
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select lives_ok($$ insert into public.attendance_sessions (team_id, label) select team_id, 'בוקר' from ctx $$,
@@ -90,7 +91,8 @@ select throws_ok($$ update public.team_members set is_admin = true where user_id
 
 -- A role that ended yesterday gives no command ------------------------------------------
 select pg_temp.as_postgres();
-update public.role_assignments set start_date = private.today() - 2, end_date = private.today() - 1;
+update public.role_assignments set start_date = private.today() - 2, end_date = private.today() - 1
+  where team_id = (select team_id from ctx);
 select pg_temp.as_user('00000000-0000-0000-0000-00000000000b');
 select throws_ok($$ insert into public.attendance_sessions (team_id) select team_id from ctx $$,
                  '42501', null, 'an expired role gives no command');

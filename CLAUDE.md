@@ -6,11 +6,11 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 **Who uses it, and when** (this drives the design):
 - **During the day, only role-holders have phones** (א' פלוגה, א' צוות "ממש", קל"ג, קמב"צ and others). They use their **own personal phones**, each signed in with their own account. They're the daytime users: roll call, assigning team tasks, checking the schedule. Design these flows to be fast and to work with one hand under pressure.
 - **Everyone else gets their phone back in the evening after classes, and on weekends.** That's when they catch up: what the team got today, their own private tasks, tomorrow's schedule. It's also when the next day's role-holders prepare (handover notes, learning names).
-- Roles rotate. Permissions come from `role_assignments`, never from a fixed "admin" user. The role list varies, so it's configurable per team and company, not hardcoded.
+- Roles rotate. **Command** permissions (roll call, later team tasks) come from `role_assignments` (today's role-holders) or course staff, never from a fixed user. Team **admins** (whoever created the team, plus anyone they promote) only handle setup: roster, roles, invite code. Today's role-holders can also manage the roster, roles and assignments. The role list varies, so it's configurable per team, not hardcoded.
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 1, MVP setup. Scaffolded, in a private GitHub repo (`saleemkheralden/team-hub`), and linked to the Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 1, MVP. The Phase 1 screens work locally (sign-in, create/join, roster, roles, roll call, links). Still to do: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
@@ -43,8 +43,17 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - Secrets go in `.env.local` (git-ignored) and Vercel environment variables. Commit a `.env.example`. The Supabase service-role key and the Google service-account key are used only on the server, never with a `NEXT_PUBLIC_` prefix.
 - Keep it simple: this is a course tool with ~30–150 users. Don't add infrastructure the free tiers don't need.
 
-## Data model (draft; the source of truth will be the migrations)
-`users`, `companies`, `teams`, `memberships(role: cadet|staff)`, `role_assignments`, `attendance_sessions`, `attendance_entries`, `tasks(visibility: team|private)`, `links`, `integrations(type: gcal|gsheet)`. See `ROADMAP.md` §2.
+## Data model (source of truth: `supabase/migrations/`)
+- `teams` (with `invite_code`), `team_members` (the roster; `user_id` is null until the cadet joins and claims the name; `is_admin`, `is_staff`), `team_roles` (configurable), `role_assignments` (role + member + date range), `attendance_sessions` / `attendance_entries`, `links`.
+- Permission helpers live in the unexposed `private` schema: `is_team_member`, `is_team_admin`, `can_command` (staff, or a command role today in Asia/Jerusalem), `can_manage` (admin or command). `public.my_permissions()` exposes them to the UI for display only.
+- RPCs: `create_team`, `preview_team`, `join_team`, `regenerate_invite_code`. New tables need explicit `grant`s (Supabase no longer exposes them automatically).
+- Planned: `companies`, `tasks(visibility: team|private)`, `integrations`. See `ROADMAP.md` §2.
+
+## Gotchas
+- Next.js 16 `cacheComponents`: per-user data goes inside `<Suspense>`; the server Supabase client calls `connection()` so it always renders at request time.
+- Recently visited routes stay mounted but hidden (`<Activity>`), so tests must scope selectors to the visible page.
+- Tailwind classes don't override each other by order: size/padding/colour live only in `button-class.ts` variants; don't pass a competing `px-*`/`h-*`/`text-*`.
+- Sign-in emails must contain the 6-digit code: templates in `supabase/templates/` (set the same template in the hosted dashboard).
 
 ## Commands
 - `npm run dev`: start the dev server at http://localhost:3000
@@ -52,4 +61,8 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `npm run lint`: ESLint
 - `vercel deploy -y --no-wait`: deploy from the CLI (until GitHub auto-deploy is connected)
 - `npx impeccable detect src`: scan the UI for design issues
-- _Still to add:_ tests, Supabase migrations
+- `npx supabase start` / `npx supabase stop`: local Supabase (Docker Desktop must be running). Studio http://127.0.0.1:54323, Mailpit (sign-in codes) http://127.0.0.1:54324
+- `npx supabase migration new <name>`: new migration; `npx supabase db reset --yes`: re-apply all migrations locally
+- `npm run db:test`: pgTAP RLS tests (`supabase/tests/`); `npm run db:types`: regenerate `src/lib/supabase/database.types.ts`
+- `npx supabase db advisors --type all`: security and performance checks
+- `node scripts/e2e-smoke.mjs`: end-to-end smoke test in headless Chrome (needs `npm run dev` + local Supabase); screenshots go to `.impeccable/review/`

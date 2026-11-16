@@ -9,7 +9,7 @@ const heebo = Heebo({
 });
 
 export const metadata: Metadata = {
-  title: strings.app.name,
+  title: { default: strings.app.name, template: `%s · ${strings.app.name}` },
   description: strings.app.description,
   applicationName: strings.app.name,
   appleWebApp: { capable: true, title: strings.app.shortName },
@@ -21,10 +21,8 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#0a0a0a" },
-  ],
+  // The board navy, so the phone's status bar continues the board band.
+  themeColor: "#0e1b33",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

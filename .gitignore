@@ -45,3 +45,7 @@ next-env.d.ts
 .claude/settings.local.json
 .claude/skills/impeccable/scripts/bin/
 .impeccable/live/
+
+# impeccable local caches
+.impeccable/hook.cache.json
+.impeccable/seeds/

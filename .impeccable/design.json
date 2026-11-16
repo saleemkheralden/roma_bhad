@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-16T12:00:00Z",
+  "title": "Design System: Roma",
+  "extensions": {
+    "colorMeta": {
+      "board": { "role": "primary", "displayName": "Board Navy", "canonical": "#0e1b33", "tonalRamp": ["#070e1c", "#0e1b33", "#1c2b4a", "#2a3a5c", "#4a5a7c", "#7d8aa6", "#c3ccdd", "#e8ecf3"] },
+      "board-2": { "role": "primary", "displayName": "Board Navy Raised", "canonical": "#1c2b4a" },
+      "board-rule": { "role": "primary", "displayName": "Board Rule", "canonical": "#2a3a5c" },
+      "board-ink": { "role": "primary", "displayName": "Board Ink", "canonical": "#f4f5f0" },
+      "board-dim": { "role": "primary", "displayName": "Board Dim", "canonical": "#c3ccdd" },
+      "now": { "role": "secondary", "displayName": "Now Amber", "canonical": "#f2a900", "tonalRamp": ["#3d2b00", "#7a5600", "#a87800", "#d29500", "#f2a900", "#ffc94d", "#ffe299", "#fff4d6"] },
+      "now-ink": { "role": "secondary", "displayName": "Now Ink", "canonical": "#7a5600" },
+      "now-wash": { "role": "secondary", "displayName": "Now Wash", "canonical": "#fff4d6" },
+      "present": { "role": "tertiary", "displayName": "Present Green", "canonical": "#1e8e4e", "tonalRamp": ["#0b3d20", "#146b3a", "#1e8e4e", "#3aa868", "#6cc290", "#a3dbb9", "#cdeedb", "#e6f4ec"] },
+      "present-ink": { "role": "tertiary", "displayName": "Present Ink", "canonical": "#146b3a" },
+      "absent": { "role": "tertiary", "displayName": "Absent Red", "canonical": "#c62828", "tonalRamp": ["#4f0f0f", "#a01f1f", "#c62828", "#dc5252", "#e98585", "#f3b5b5", "#f8d6d5", "#fcebea"] },
+      "absent-ink": { "role": "tertiary", "displayName": "Absent Ink", "canonical": "#a01f1f" },
+      "absent-wash": { "role": "tertiary", "displayName": "Absent Wash", "canonical": "#fcebea" },
+      "unmarked": { "role": "tertiary", "displayName": "Unmarked Slate", "canonical": "#5b6478" },
+      "ground": { "role": "neutral", "displayName": "Working Ground", "canonical": "#f4f5f0", "tonalRamp": ["#22241f", "#45483f", "#6b6f63", "#93988a", "#b9beb0", "#d7dacf", "#f4f5f0", "#ffffff"] },
+      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#ffffff" },
+      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#0e1b33" },
+      "ink-2": { "role": "neutral", "displayName": "Ink 2", "canonical": "#3f4a5f" },
+      "rule": { "role": "neutral", "displayName": "Rule", "canonical": "#d7dacf" },
+      "rule-strong": { "role": "neutral", "displayName": "Rule Strong", "canonical": "#b9beb0" }
+    },
+    "typographyMeta": {
+      "display": { "displayName": "Display", "purpose": "The live roll-call count only." },
+      "headline": { "displayName": "Headline", "purpose": "Page titles such as the roll-call label." },
+      "title": { "displayName": "Title", "purpose": "Section headings." },
+      "body": { "displayName": "Body", "purpose": "List rows, links, inputs, button text." },
+      "body-strong": { "displayName": "Body Strong", "purpose": "Board rows and roll-call first names." },
+      "label": { "displayName": "Label", "purpose": "Field labels, edit-area summaries, back links." },
+      "caption": { "displayName": "Caption", "purpose": "Board column headers, tab labels, secondary lines." }
+    },
+    "shadows": [
+      { "name": "now-tab-rule", "value": "inset 0 3px 0 var(--color-now)", "purpose": "Active tab's amber top rule. A rule, not elevation; no other shadows exist." }
+    ],
+    "focus": [
+      { "name": "focus-ring", "value": "outline: 3px solid var(--color-now); outline-offset: 2px; border-radius: 4px", "purpose": "Global keyboard focus on every control." }
+    ],
+    "motion": [
+      { "name": "flip", "value": "flip 360ms cubic-bezier(0.16, 1, 0.3, 1); from perspective(400px) rotateX(-70deg), opacity 0.4", "purpose": "Roll-call cell flips when its status changes; never on first render." },
+      { "name": "reduced-motion", "value": "animation and transition durations 1ms", "purpose": "Under prefers-reduced-motion every change is instant." }
+    ],
+    "breakpoints": [
+      { "name": "column", "value": "36rem max width (team area), 28rem (sign-in, join, create)" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The screen's main action: navy fill, 48px.",
+      "html": "<button class=\"ds-btn-primary\">העתקת סיכום</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; gap:8px; height:48px; padding:0 20px; border:none; border-radius:var(--radius-control, 8px); background:var(--color-board, #0e1b33); color:var(--color-board-ink, #f4f5f0); font:700 1rem/1 Heebo, system-ui, sans-serif; transition:background-color .15s; cursor:pointer; } .ds-btn-primary:hover { background:var(--color-board-2, #1c2b4a); } .ds-btn-primary:focus-visible { outline:3px solid var(--color-now, #f2a900); outline-offset:2px; } .ds-btn-primary:disabled { opacity:.5; cursor:not-allowed; }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action beside or below the primary.",
+      "html": "<button class=\"ds-btn-outline\">סיום</button>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; justify-content:center; height:48px; padding:0 20px; border:1px solid var(--color-ink, #0e1b33); border-radius:var(--radius-control, 8px); background:var(--color-paper, #fff); color:var(--color-ink, #0e1b33); font:700 1rem/1 Heebo, system-ui, sans-serif; transition:background-color .15s; cursor:pointer; } .ds-btn-outline:hover { background:var(--color-ground, #f4f5f0); } .ds-btn-outline:focus-visible { outline:3px solid var(--color-now, #f2a900); outline-offset:2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Destructive action, always set apart below a rule.",
+      "html": "<button class=\"ds-btn-danger\">מחיקת הנוכחות</button>",
+      "css": ".ds-btn-danger { display:inline-flex; align-items:center; justify-content:center; height:48px; padding:0 20px; border:1px solid var(--color-absent, #c62828); border-radius:var(--radius-control, 8px); background:var(--color-paper, #fff); color:var(--color-absent-ink, #a01f1f); font:700 1rem/1 Heebo, system-ui, sans-serif; transition:background-color .15s; cursor:pointer; } .ds-btn-danger:hover { background:var(--color-absent-wash, #fcebea); } .ds-btn-danger:focus-visible { outline:3px solid var(--color-now, #f2a900); outline-offset:2px; }"
+    },
+    {
+      "name": "Text Field",
+      "kind": "input",
+      "refersTo": "input-field",
+      "description": "Labelled 48px field on paper.",
+      "html": "<div class=\"ds-field\"><label class=\"ds-field-label\" for=\"ds-f\">שם הקישור</label><input id=\"ds-f\" class=\"ds-field-input\" /></div>",
+      "css": ".ds-field { display:flex; flex-direction:column; gap:6px; direction:rtl; font-family:Heebo, system-ui, sans-serif; } .ds-field-label { font-size:.875rem; font-weight:700; color:var(--color-ink, #0e1b33); } .ds-field-input { height:48px; padding:0 12px; border:1px solid var(--color-rule-strong, #b9beb0); border-radius:var(--radius-control, 8px); background:var(--color-paper, #fff); color:var(--color-ink, #0e1b33); font:400 1rem Heebo, system-ui, sans-serif; } .ds-field-input:focus { border-color:var(--color-board, #0e1b33); outline:none; } .ds-field-input:focus-visible { outline:3px solid var(--color-now, #f2a900); outline-offset:2px; }"
+    },
+    {
+      "name": "Choice Chip",
+      "kind": "chip",
+      "refersTo": "choice-chip-selected",
+      "description": "Session-label radio chips; the checked one fills navy.",
+      "html": "<div class=\"ds-chips\"><span class=\"ds-chip ds-chip-on\">בוקר</span><span class=\"ds-chip\">צהריים</span><span class=\"ds-chip\">ערב</span><span class=\"ds-chip\">אחר</span></div>",
+      "css": ".ds-chips { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; direction:rtl; } .ds-chip { display:flex; height:44px; align-items:center; justify-content:center; border:1px solid var(--color-rule, #d7dacf); border-radius:var(--radius-cell, 6px); background:var(--color-paper, #fff); color:var(--color-ink-2, #3f4a5f); font:700 .875rem Heebo, system-ui, sans-serif; cursor:pointer; } .ds-chip:hover { color:var(--color-ink, #0e1b33); } .ds-chip-on, .ds-chip-on:hover { border-color:var(--color-board, #0e1b33); background:var(--color-board, #0e1b33); color:var(--color-board-ink, #f4f5f0); }"
+    },
+    {
+      "name": "Tab Bar",
+      "kind": "nav",
+      "refersTo": "tab-bar",
+      "description": "Fixed bottom navigation; active tab gets the amber top rule.",
+      "html": "<nav class=\"ds-tabs\"><a class=\"ds-tab\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"3\" y=\"4\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M16 2v4M8 2v4M3 10h18M9 16l2 2 4-4\"/></svg>היום</a><a class=\"ds-tab\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/><path d=\"M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75\"/></svg>צוות</a><a class=\"ds-tab ds-tab-on\" aria-current=\"page\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect x=\"8\" y=\"2\" width=\"8\" height=\"4\" rx=\"1\"/><path d=\"M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2M9 14l2 2 4-4\"/></svg>נוכחות</a><a class=\"ds-tab\"><svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M9 17H7A5 5 0 0 1 7 7h2M15 7h2a5 5 0 1 1 0 10h-2M8 12h8\"/></svg>קישורים</a></nav>",
+      "css": ".ds-tabs { display:flex; direction:rtl; border-top:1px solid var(--color-rule, #d7dacf); background:var(--color-paper, #fff); font-family:Heebo, system-ui, sans-serif; } .ds-tab { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; height:64px; font-size:.75rem; font-weight:500; color:var(--color-ink-2, #3f4a5f); text-decoration:none; cursor:pointer; } .ds-tab:hover { color:var(--color-ink, #0e1b33); } .ds-tab:focus-visible { outline:3px solid var(--color-now, #f2a900); outline-offset:2px; } .ds-tab-on { font-weight:800; color:var(--color-ink, #0e1b33); box-shadow:inset 0 3px 0 var(--color-now, #f2a900); }"
+    },
+    {
+      "name": "Team Board",
+      "kind": "custom",
+      "refersTo": "board-band",
+      "description": "Navy departure board: identity, day and clock, today's role-holders as rows.",
+      "html": "<header class=\"ds-board\"><div class=\"ds-board-top\"><div><div class=\"ds-board-brand\">רומא</div><div class=\"ds-board-team\">צוות 3</div></div><div class=\"ds-board-clock\">ב׳ 16.11 · 14:41</div></div><table class=\"ds-board-table\"><thead><tr><th>תפקיד</th><th>בתפקיד עכשיו</th><th class=\"ds-end\">עד</th></tr></thead><tbody><tr><td class=\"ds-board-role\">א׳ צוות</td><td><b>אבי כהן</b> <span class=\"ds-board-dim\">· אני</span></td><td class=\"ds-end ds-board-dim\">היום</td></tr></tbody></table><p class=\"ds-board-next\"><b>מחר</b> סמל: איתי לוי</p></header>",
+      "css": ".ds-board { direction:rtl; background:var(--color-board, #0e1b33); color:var(--color-board-ink, #f4f5f0); padding:16px 16px 12px; font-family:Heebo, system-ui, sans-serif; font-variant-numeric:tabular-nums; } .ds-board-top { display:flex; justify-content:space-between; align-items:baseline; gap:12px; } .ds-board-brand { font-size:1.375rem; font-weight:800; line-height:1.25; } .ds-board-team, .ds-board-dim { color:var(--color-board-dim, #c3ccdd); font-size:.875rem; font-weight:400; } .ds-board-clock { color:var(--color-now, #f2a900); font-size:.875rem; font-weight:700; } .ds-board-table { width:100%; margin-top:12px; border-collapse:collapse; } .ds-board-table th { font-size:.75rem; font-weight:500; color:var(--color-board-dim, #c3ccdd); text-align:start; padding-bottom:6px; border-bottom:1px solid var(--color-board-rule, #2a3a5c); } .ds-board-table td { height:40px; font-size:.9375rem; text-align:start; } .ds-board-table .ds-end { text-align:end; } .ds-board-role { color:var(--color-now, #f2a900); font-weight:700; } .ds-board-next { margin:4px 0 0; padding-top:8px; border-top:1px solid var(--color-board-rule, #2a3a5c); font-size:.875rem; color:var(--color-board-dim, #c3ccdd); }"
+    },
+    {
+      "name": "Roll-Call Grid",
+      "kind": "custom",
+      "refersTo": "roll-call-cell-present",
+      "description": "Whole-name cells, 3 per row, in four states; changed cells flip.",
+      "html": "<ul class=\"ds-grid\"><li><button class=\"ds-cell ds-present\"><b>אבי</b><span class=\"ds-last\">כהן</span><span class=\"ds-st ds-st-present\">נוכח</span></button></li><li><button class=\"ds-cell ds-late\"><b>יונתן</b><span class=\"ds-last\">פרץ</span><span class=\"ds-st ds-st-late\">מאחר · בדרך</span></button></li><li><button class=\"ds-cell ds-absent\"><b>שירה</b><span class=\"ds-last\">אבוטבול</span><span class=\"ds-st ds-st-absent\">חסר · באישור</span></button></li><li><button class=\"ds-cell ds-none\"><b>תמר</b><span class=\"ds-last\">גולן</span><span class=\"ds-st ds-st-none\">לא סומן</span></button></li></ul>",
+      "css": ".ds-grid { list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3,1fr); gap:6px; direction:rtl; font-family:Heebo, system-ui, sans-serif; } .ds-cell { display:flex; flex-direction:column; justify-content:space-between; width:100%; min-height:64px; padding:6px 8px; border:1px solid; border-radius:var(--radius-cell, 6px); text-align:start; color:var(--color-ink, #0e1b33); font:inherit; cursor:pointer; } .ds-cell b { font-size:.9375rem; font-weight:700; line-height:1.25; } .ds-last { font-size:.75rem; color:var(--color-ink-2, #3f4a5f); } .ds-st { margin-top:2px; font-size:.75rem; font-weight:700; } .ds-cell:focus-visible { outline:3px solid var(--color-now, #f2a900); outline-offset:2px; } .ds-cell:active { animation:ds-flip 360ms cubic-bezier(0.16,1,0.3,1); transform-origin:top; } @keyframes ds-flip { from { transform:perspective(400px) rotateX(-70deg); opacity:.4; } to { transform:none; opacity:1; } } .ds-none { border-style:dashed; border-color:var(--color-rule-strong, #b9beb0); background:var(--color-paper, #fff); } .ds-present { border-color:var(--color-present, #1e8e4e); background:var(--color-paper, #fff); } .ds-late { border-color:var(--color-now, #f2a900); background:var(--color-now-wash, #fff4d6); } .ds-absent { border-color:var(--color-absent, #c62828); background:var(--color-absent-wash, #fcebea); } .ds-st-none { color:var(--color-unmarked, #5b6478); } .ds-st-present { color:var(--color-present-ink, #146b3a); } .ds-st-late { color:var(--color-now-ink, #7a5600); } .ds-st-absent { color:var(--color-absent-ink, #a01f1f); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Departure Board",
+    "overview": "Roma reads like the board in a station hall: a deep navy band at the top says who holds which role now and what comes next, and below it a pale working ground carries the day's business in plain rows and packed cells. The system is built for a phone held in one hand outdoors, in the sun, by someone in a hurry. Density is high but never cramped: every tap target is at least 44px, rows are separated by 1px rules rather than boxed into cards, and the whole UI is one typeface whose numbers line up.\n\nThe world is light only, by decision: it is read in daylight, so there is no dark theme. Identity lives in the navy band (which continues into the phone's status bar through the theme colour), not in decoration. One warm colour, amber, means \"now\" and nothing else. Everything is flat: depth comes from the navy-versus-ground contrast and from rules, never from shadows. It refuses the generic white-cards-and-blue-accent team app.",
+    "keyCharacteristics": [
+      "Navy board band on top, light ground below, white paper for interactive surfaces.",
+      "Amber is reserved for \"now\"; four fixed state colours for attendance.",
+      "One face (Heebo), heavy weights for hierarchy, tabular figures everywhere.",
+      "Square-ish corners (6px cells, 8px controls), 1px rules, no shadows.",
+      "Hebrew RTL, logical properties only, 44px minimum tap targets.",
+      "Destructive actions are set apart by space and rules, never next to the primary action."
+    ],
+    "rules": [
+      { "name": "The Now Rule", "body": "Amber means \"now\": the current role, the active tab, the live count, the focused control. It never decorates, never fills a button, and never marks something that isn't current or in focus.", "section": "colors" },
+      { "name": "The Sun Contrast Rule", "body": "Bright amber (now) is never text on the light ground. On light surfaces \"now\" text uses now-ink; bright amber text appears only on the navy board.", "section": "colors" },
+      { "name": "The Four States Rule", "body": "Attendance has exactly four looks: unmarked is paper with a dashed rule-strong border; present is paper with a green border; late is now-wash with an amber border; absent is absent-wash with a red border. Present stays paper so the exceptions (late, absent) are the only washes on a full grid.", "section": "colors" },
+      { "name": "The One Face Rule", "body": "Heebo only, tabular figures always. Hierarchy comes from weight and size, never from a second family, italics or letter-spacing.", "section": "typography" },
+      { "name": "The Flat Board Rule", "body": "Surfaces never lift. To separate something, change its tone (ground to paper) or draw a 1px rule.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do keep amber for \"now\" only: current role, active tab, live count, focus ring.",
+      "Do use now-ink, not bright amber, for \"now\" text on the ground or on paper.",
+      "Do separate rows with 1px rules (rule) and lists with a rule above and below, instead of boxing them in cards.",
+      "Do keep every tap target at 44px or taller; primary and outline buttons are 48px.",
+      "Do put size, padding and colour in a button variant, and only layout (width, margin) at the call site.",
+      "Do set destructive actions apart: below a rule with space above, or inside a collapsed edit area, never beside the primary action.",
+      "Do use logical properties (start/end) for every direction.",
+      "Do keep figures tabular and use lucide icons (18–22px) alongside text."
+    ],
+    "donts": [
+      "Don't add drop shadows or lifted cards; the system is flat.",
+      "Don't use bright amber (#f2a900) as text on the light ground.",
+      "Don't fill present cells with a wash; only late and absent get washes.",
+      "Don't add a dark theme; the app is light only for daylight use.",
+      "Don't introduce a second typeface or carry hierarchy with letter-spacing or uppercase.",
+      "Don't use left/right physical properties."
+    ]
+  }
+}

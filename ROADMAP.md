@@ -111,21 +111,26 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 ### Phase 1: MVP
 - [x] Scaffold the app (Next.js 16 + TypeScript + Tailwind 4, `dir="rtl"`, Heebo font, PWA manifest)
 - [x] Add Impeccable (dev dependency + project skills)
-- [ ] Create the design context (`/impeccable init`)
+- [x] Create the design context (`PRODUCT.md`, "Departure Board" direction in `.impeccable/surfaces/src-app.md`)
 - [x] `git init` + private GitHub repo + link to Vercel; first deploy (behind Vercel login)
 - [ ] Give the Vercel GitHub app access to the repo, so every push deploys
-- [ ] Create the Supabase project; tables `users`, `teams`, `memberships`, `links`
-- [ ] Google sign-in
-- [ ] Create a team, and join one with an invite code or link
-- [ ] Roster screen: list, add/edit members, CSV paste import
-- [ ] Configurable role list per team/company (א' פלוגה, א' צוות "ממש", קל"ג, קמב"צ…)
-- [ ] `role_assignments` table + "today's role-holders" screen; set tomorrow's holders in the evening
-- [ ] RLS: roll call and team-task creation only for staff + today's role-holders
-- [ ] Roll-call screen: tap each name for present/absent/late plus a reason; live counter "28/30"
-- [ ] "Copy summary" button that formats the summary for a message (no locations)
-- [ ] Roll-call history
-- [ ] Links hub: add, edit and categorize links
-- [ ] PWA manifest and installability
+- [x] Local Supabase + Phase 1 schema (`teams`, `team_members`, `team_roles`, `role_assignments`, `attendance_*`, `links`) with RLS and 25 pgTAP tests
+- [ ] Create the hosted Supabase project and push the migrations
+- [x] Sign-in with a 6-digit email code (works locally via Mailpit)
+- [ ] Google sign-in: create Google OAuth credentials and enable the provider (code is ready)
+- [x] Create a team, and join one with an invite code or link (claim your name from the roster)
+- [x] Roster screen: list, add and remove names, admin/staff flags
+- [ ] Roster: edit names, CSV/paste import
+- [x] Configurable role list per team (defaults: א׳ צוות, סמל, קל״ג, קמב״צ)
+- [ ] Company-level roles (א׳ פלוגה …) once companies exist
+- [x] `role_assignments` + today's role-holders on the board; assign by date range (so tomorrow's holders can be set in the evening)
+- [x] RLS: roll call only for staff + today's role-holders (team tasks come in Phase 2)
+- [x] Roll-call screen: tap each name for present/late/absent plus a reason; live counter
+- [x] "Copy summary" button that formats the summary for a message (no locations)
+- [x] Roll-call history
+- [x] Links hub: add, remove and categorize links
+- [x] PWA manifest
+- [ ] Real app icons (192/512 PNG) for installability
 - [ ] Deploy to Vercel; pilot with your own team
 
 ### Phase 2: Tasks
