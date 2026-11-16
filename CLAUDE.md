@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 2 done locally (tasks, my day, evening catch-up) on top of Phase 1. Still to do for going online: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 3 in progress locally: calendar embed done (Phases 1–2 done). Still to do for going online: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
@@ -48,7 +48,8 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - Permission helpers live in the unexposed `private` schema: `is_team_member`, `is_team_admin`, `can_command` (staff, or a command role today in Asia/Jerusalem), `can_manage` (admin or command). `public.my_permissions()` exposes them to the UI for display only.
 - RPCs: `create_team`, `preview_team`, `join_team`, `regenerate_invite_code`. New tables need explicit `grant`s (Supabase no longer exposes them automatically).
 - `tasks` (Phase 2): `visibility` team|private (immutable), `assignee_member_id` (null = whole team), `due_on` + optional `due_time`, `status` open|done. Trigger `private.guard_tasks` forces `owner_id` to the caller on private tasks, sets `done_at`/`done_by`, and lets a non-command assignee change only `status`. Team-wide tasks (no assignee) are closed by command only; each cadet's part lives in `task_completions` (own row, or anyone's for command; only while the task is open).
-- Planned: `companies`, `integrations`. See `ROADMAP.md` §2.
+- `integrations` (Phase 3): `kind` gcal|gsheet + `external_id` (only an identifier; events and sheet contents stay in Google). Members read, managers add/remove, max 3 calendars. `src/lib/calendar.ts` parses pasted IDs/links/iframes and builds the embed URL.
+- Planned: `companies`. See `ROADMAP.md` §2.
 
 ## Gotchas
 - Next.js 16 `cacheComponents`: per-user data goes inside `<Suspense>`; the server Supabase client calls `connection()` so it always renders at request time.
@@ -65,6 +66,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `npx impeccable detect src`: scan the UI for design issues
 - `npx supabase start` / `npx supabase stop`: local Supabase (Docker Desktop must be running). Studio http://127.0.0.1:54323, Mailpit (sign-in codes) http://127.0.0.1:54324
 - `npx supabase migration new <name>`: new migration; `npx supabase migration up --local`: apply new migrations and keep local data; `npx supabase db reset --yes`: wipe and re-apply everything
+- `npm run test:unit`: parser checks (`scripts/test-calendar.ts`, run by Node directly)
 - `npm run db:test`: pgTAP RLS tests (`supabase/tests/`); `npm run db:types`: regenerate `src/lib/supabase/database.types.ts`
 - `npx supabase db advisors --type all`: security and performance checks
 - `node scripts/make-icons.mjs`: re-render the app icons (then re-embed provenance with `impeccable embed-prompt`)

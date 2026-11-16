@@ -189,6 +189,32 @@ try {
   await a.screenshot({ path: `${OUT}/links.png` });
   step("link added");
 
+  // ---- A: connect a calendar (public Israeli holidays calendar) -----------
+  const holidays = "he.jewish#holiday@group.v.calendar.google.com";
+  await a.goto(`${BASE}/t/${teamId}/team#calendar`);
+  await a.locator("summary", { hasText: "חיבור היומן" }).click();
+  const calForm = a.locator("form", { has: a.getByRole("button", { name: "חיבור היומן" }) });
+  await calForm.getByLabel("יומן Google").fill("this is not a calendar");
+  await calForm.getByRole("button", { name: "חיבור היומן" }).click();
+  await a.getByText(/לא מצאנו מזהה יומן/).waitFor();
+  const snippet = `<iframe src="https://calendar.google.com/calendar/embed?src=${encodeURIComponent(holidays)}&amp;ctz=Asia%2FJerusalem" style="border: 0" width="800" height="600"></iframe>`;
+  await calForm.getByLabel("יומן Google").fill(snippet);
+  await calForm.getByLabel("שם (לא חובה)").fill("חגים");
+  await calForm.getByRole("button", { name: "חיבור היומן" }).click();
+  await a.locator("#calendar").getByText(holidays).first().waitFor();
+  step("calendar connected from a pasted <iframe> snippet (bad input rejected)");
+
+  await a.goto(`${BASE}/t/${teamId}`);
+  const frame = a.locator('iframe[title="יומן הצוות"]');
+  await frame.waitFor();
+  const frameSrc = new URL(await frame.getAttribute("src"));
+  if (!frameSrc.searchParams.getAll("src").includes(holidays)) fail(`embed src missing the calendar: ${frameSrc}`);
+  if (frameSrc.searchParams.get("ctz") !== "Asia/Jerusalem") fail("embed not in Israel time");
+  await frame.scrollIntoViewIfNeeded();
+  await a.waitForTimeout(4000); // let Google render the agenda
+  await a.screenshot({ path: `${OUT}/today-calendar.png`, fullPage: true });
+  step("Today embeds the calendar (agenda, Israel time)");
+
   // ---- A: tasks ---------------------------------------------------------
   const todayIso = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
   const tomorrowIso = new Date(Date.now() + 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
@@ -267,6 +293,14 @@ try {
   if (!(await visible(b.getByText(/צפייה בלבד/)))) fail("B should see roll call read-only");
   await b.screenshot({ path: `${OUT}/roll-call-readonly.png` });
   step("B sees roll call read-only");
+
+  // ---- B: sees the calendar, cannot connect one ----------------------------
+  await b.goto(`${BASE}/t/${teamId}`);
+  await b.locator('iframe[title="יומן הצוות"]').waitFor();
+  await b.goto(`${BASE}/t/${teamId}/team`);
+  await b.getByText("יומן הצוות").first().waitFor();
+  if (await b.locator("summary", { hasText: "חיבור היומן" }).count()) fail("B can connect a calendar");
+  step("B sees the team calendar but cannot change it");
 
   // ---- B: tasks ---------------------------------------------------------
   await b.goto(`${BASE}/t/${teamId}/tasks`);

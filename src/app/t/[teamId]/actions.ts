@@ -6,6 +6,7 @@ import type { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
+import { parseCalendarIds } from "@/lib/calendar";
 
 // Permissions are enforced by RLS and triggers in the database; these
 // functions only shape input and translate errors into Hebrew.
@@ -273,6 +274,32 @@ export async function setCompletion(teamId: number, taskId: number, memberId: nu
 
 export async function deleteTask(teamId: number, taskId: number) {
   return run((db) => db.from("tasks").delete({ count: "exact" }).eq("team_id", teamId).eq("id", taskId));
+}
+
+// Calendar ---------------------------------------------------------------------
+
+export async function addCalendar(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const ids = parseCalendarIds(String(formData.get("calendar") ?? ""));
+  if (ids.length === 0) return { error: strings.calendar.notFound };
+  const label = text(formData, "label").slice(0, 60);
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  for (const id of ids) {
+    const { error } = await supabase
+      .from("integrations")
+      .insert({ team_id: teamId, kind: "gcal", external_id: id, label, created_by: claims?.claims?.sub });
+    if (error?.code === "23505") return { error: strings.calendar.duplicate };
+    if (error?.code === "23514") return { error: strings.calendar.tooMany };
+    if (error) return fail(error);
+  }
+  refresh();
+  return { ok: true };
+}
+
+export async function removeIntegration(teamId: number, integrationId: number) {
+  return run((db) =>
+    db.from("integrations").delete({ count: "exact" }).eq("team_id", teamId).eq("id", integrationId),
+  );
 }
 
 // Links ----------------------------------------------------------------------

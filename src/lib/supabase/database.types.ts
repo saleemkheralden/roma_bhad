@@ -69,6 +69,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"integrations": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"external_id": string,"id": number,"kind": string,"label": string,"team_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"external_id": string,"id"?: never,"kind": string,"label"?: string,"team_id": number
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"external_id"?: string,"id"?: never,"kind"?: string,"label"?: string,"team_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "integrations_team_id_fkey"
+      columns: ["team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"links": {
                   Row: {
                     "category": string,"created_at": string,"id": number,"sort_order": number,"team_id": number,"title": string,"url": string

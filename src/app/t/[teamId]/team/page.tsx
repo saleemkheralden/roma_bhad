@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { ChevronDown, Trash2 } from "lucide-react";
-import { fullName, getTeamContext } from "@/lib/data";
+import { fullName, getCalendars, getTeamContext } from "@/lib/data";
 import { shortDate, weekdayOf } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section } from "@/components/section";
@@ -9,12 +9,14 @@ import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/compon
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import {
+  addCalendar,
   addAssignment,
   addMember,
   addRole,
   importMembers,
   regenerateInvite,
   removeAssignment,
+  removeIntegration,
   removeMember,
   removeRole,
   setMemberFlag,
@@ -25,8 +27,9 @@ const s = strings.team;
 
 async function Team({ params }: { params: Promise<{ teamId: string }> }) {
   const teamId = Number((await params).teamId);
-  const ctx = await getTeamContext(teamId);
+  const [ctx, calendars] = await Promise.all([getTeamContext(teamId), getCalendars(teamId)]);
   const { can_manage: canManage, is_admin: isAdmin } = ctx.permissions;
+  const c = strings.calendar;
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const inviteUrl = `${origin}/join?code=${ctx.team.invite_code}`;
@@ -240,6 +243,59 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
                   </li>
                 ))}
               </ul>
+            }
+          />
+        ) : null}
+      </Section>
+
+      <Section id="calendar" title={c.settings}>
+        {calendars.length === 0 ? (
+          <p className="text-base text-ink-2">{c.empty}</p>
+        ) : (
+          <ul className="divide-y divide-rule border-y border-rule">
+            {calendars.map((cal) => (
+              <li key={cal.id} className="py-2.5">
+                {cal.label ? <p className="text-base font-bold">{cal.label}</p> : null}
+                <p dir="ltr" className="truncate text-start text-sm text-ink-2">
+                  {cal.external_id}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
+        {canManage ? (
+          <EditArea
+            title={c.connect}
+            add={
+              <ActionForm action={addCalendar.bind(null, teamId)} className="flex flex-col gap-2">
+                <p className="text-sm text-ink-2">{c.settingsHint}</p>
+                <Field label={c.field} name="calendar" placeholder={c.placeholder} dir="ltr" required maxLength={2000} />
+                <Field label={c.label} name="label" placeholder={c.labelPlaceholder} maxLength={60} />
+                <p className="rounded-[var(--radius-cell)] bg-now-wash px-3 py-2 text-sm font-medium text-now-ink">
+                  {c.securityNote}
+                </p>
+                <p className="text-sm text-ink-2">{c.privateNote}</p>
+                <SubmitButton variant="outline">{c.connect}</SubmitButton>
+              </ActionForm>
+            }
+            remove={
+              calendars.length > 0 ? (
+                <ul className="flex flex-col gap-2">
+                  {calendars.map((cal) => (
+                    <li key={cal.id} className="flex items-center justify-between gap-3">
+                      <span dir="ltr" className="truncate text-sm font-bold">{cal.label || cal.external_id}</span>
+                      <ActionButton
+                        action={removeIntegration.bind(null, teamId, cal.id)}
+                        confirm={`${strings.common.remove}: ${cal.label || cal.external_id}?`}
+                        label={`${strings.common.remove} ${cal.label || cal.external_id}`}
+                        variant="icon-danger"
+                      >
+                        <Trash2 aria-hidden size={18} />
+                      </ActionButton>
+                    </li>
+                  ))}
+                </ul>
+              ) : null
             }
           />
         ) : null}

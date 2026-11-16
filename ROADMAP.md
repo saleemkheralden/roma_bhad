@@ -144,7 +144,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Team-wide tasks done per cadet: each cadet marks their part, progress and who's missing, command marks cadets without a phone and closes the task
 
 ### Phase 3: Integrations
-- [ ] Settings: paste the team's Google Calendar ID → embedded iframe
+- [x] Settings: paste the team's Google Calendar (ID, share link, embed link or `<iframe>` code) → agenda embed on Today, up to 3 calendars
 - [ ] Calendar API: "today/tomorrow" list in "my day"
 - [ ] Google Cloud service account + Sheets API (read-only); the staff shares the sheet with the service account's email
 - [ ] Sheet viewer: pick a tab/range → mobile-friendly table, cached
