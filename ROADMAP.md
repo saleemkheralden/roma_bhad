@@ -115,7 +115,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] `git init` + private GitHub repo + link to Vercel; first deploy (behind Vercel login)
 - [ ] Give the Vercel GitHub app access to the repo, so every push deploys
 - [x] Local Supabase + Phase 1 schema (`teams`, `team_members`, `team_roles`, `role_assignments`, `attendance_*`, `links`) with RLS and 25 pgTAP tests
-- [ ] Create the hosted Supabase project and push the migrations
+- [x] Create the hosted Supabase project (`roma`, Frankfurt) and push the migrations
 - [x] Sign-in with a 6-digit email code (works locally via Mailpit)
 - [ ] Google sign-in: create Google OAuth credentials and enable the provider (code is ready)
 - [x] Create a team, and join one with an invite code or link (claim your name from the roster)

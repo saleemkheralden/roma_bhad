@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 3 in progress locally: calendar embed done (Phases 1–2 done). Still to do for going online: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 3 in progress: calendar embed done (Phases 1–2 done). **Production:** https://team-hub-nine-cyan.vercel.app on Vercel; Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Still to do for going online: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
