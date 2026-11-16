@@ -262,6 +262,9 @@ isOneToOne: false
 "my_permissions":
 { Args: { "p_team_id": number }; Returns: Json
                            },
+"ping":
+{ Args: Record<PropertyKey, never>; Returns: boolean
+                           },
 "preview_team":
 { Args: { "p_code": string }; Returns: Json
                            },
