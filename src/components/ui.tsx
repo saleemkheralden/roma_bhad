@@ -55,6 +55,27 @@ export function Field({
   );
 }
 
+export function TextArea({
+  label,
+  hint,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement> & { label: string; hint?: string }) {
+  const id = useId();
+  return (
+    <div className="flex flex-col gap-1.5">
+      <label htmlFor={id} className="text-sm font-bold text-ink">
+        {label}
+      </label>
+      <textarea
+        id={id}
+        className="min-h-36 rounded-[var(--radius-control)] border border-rule-strong bg-paper px-3 py-2 text-base text-ink placeholder:text-ink-2 focus:border-board focus:outline-none"
+        {...props}
+      />
+      {hint ? <p className="text-sm text-ink-2">{hint}</p> : null}
+    </div>
+  );
+}
+
 export function SelectField({
   label,
   children,
@@ -86,7 +107,7 @@ export function ErrorText({ children }: { children: ReactNode }) {
   );
 }
 
-export type ActionResult = { error?: string; ok?: boolean } | null;
+export type ActionResult = { error?: string; ok?: boolean; message?: string } | null;
 export type FormAction = (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
 
 /** A <form> bound to a server function, showing its error and resetting on success. */
@@ -104,6 +125,11 @@ export function ActionForm({
     <form action={formAction} className={className}>
       {children}
       <ErrorText>{state?.error}</ErrorText>
+      {state?.message ? (
+        <p role="status" className="text-sm font-bold text-present-ink">
+          {state.message}
+        </p>
+      ) : null}
     </form>
   );
 }

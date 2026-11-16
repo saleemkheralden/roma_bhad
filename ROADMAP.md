@@ -120,7 +120,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Google sign-in: create Google OAuth credentials and enable the provider (code is ready)
 - [x] Create a team, and join one with an invite code or link (claim your name from the roster)
 - [x] Roster screen: list, add and remove names, admin/staff flags
-- [ ] Roster: edit names, CSV/paste import
+- [x] Roster: edit names, paste a list (one per line, or two columns from a sheet)
 - [x] Configurable role list per team (defaults: א׳ צוות, סמל, קל״ג, קמב״צ)
 - [ ] Company-level roles (א׳ פלוגה …) once companies exist
 - [x] `role_assignments` + today's role-holders on the board; assign by date range (so tomorrow's holders can be set in the evening)
@@ -130,7 +130,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Roll-call history
 - [x] Links hub: add, remove and categorize links
 - [x] PWA manifest
-- [ ] Real app icons (192/512 PNG) for installability
+- [x] Real app icons (192/512 PNG + maskable + apple-touch), rendered by `scripts/make-icons.mjs`
 - [ ] Deploy to Vercel; pilot with your own team
 
 ### Phase 2: Tasks

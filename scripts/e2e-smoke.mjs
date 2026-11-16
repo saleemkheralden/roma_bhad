@@ -74,14 +74,35 @@ try {
   const teamId = teamUrl.pathname.split("/")[2];
   step(`team created (${teamId})`);
 
-  for (const [first, last] of cadets) {
-    const form = a.locator("form", { has: a.getByRole("button", { name: "הוספת שם" }) });
-    await form.getByLabel("שם פרטי").fill(first);
-    await form.getByLabel("שם משפחה").fill(last);
-    await form.getByRole("button", { name: "הוספת שם" }).click();
-    await a.locator("li p", { hasText: `${first} ${last}` }).first().waitFor();
-  }
-  step("12 cadets added");
+  // One name through the single-add form, the rest pasted as a list.
+  const [[first0, last0], ...pasted] = cadets;
+  const addForm = a.locator("form", { has: a.getByRole("button", { name: "הוספת שם" }) });
+  await addForm.getByLabel("שם פרטי").fill(first0);
+  await addForm.getByLabel("שם משפחה").fill(last0);
+  await addForm.getByRole("button", { name: "הוספת שם" }).click();
+  await a.locator("li p", { hasText: `${first0} ${last0}` }).first().waitFor();
+
+  await a.locator("summary", { hasText: "הדבקת רשימה" }).click();
+  // Numbered lines, a tab-separated row (as pasted from a sheet) and a duplicate.
+  const pasteText = [
+    ...pasted.slice(0, 5).map(([f, l], i) => `${i + 1}. ${f} ${l}`),
+    ...pasted.slice(5).map(([f, l]) => `${f}\t${l}`),
+    `${first0} ${last0}`,
+  ].join("\n");
+  await a.getByLabel("שם בכל שורה").fill(pasteText);
+  await a.getByRole("button", { name: "הוספת השמות" }).click();
+  await a.getByText("נוספו 11 שמות (שם אחד כבר היה ברשימה)").waitFor();
+  for (const [f, l] of pasted) await a.locator("li p", { hasText: `${f} ${l}` }).first().waitFor();
+  step("1 cadet added + 11 pasted (numbering, tabs and a duplicate handled)");
+
+  // Edit a name.
+  await a.locator("summary", { hasText: "עדי רוזן" }).click();
+  const editForm = a.locator("form", { has: a.getByRole("button", { name: "שמירת שם" }) }).filter({ has: a.locator('input[value="רוזן"]') });
+  await editForm.getByLabel("שם משפחה").fill("רוזנברג");
+  await editForm.getByRole("button", { name: "שמירת שם" }).click();
+  await a.locator("li p", { hasText: "עדי רוזנברג" }).first().waitFor();
+  await a.locator("summary", { hasText: "עדי רוזנברג" }).click(); // collapse
+  step("name edited");
 
   await a.locator("summary", { hasText: "עריכת שיבוצים" }).click();
   const assign = a.locator("form", { has: a.getByRole("button", { name: "שיבוץ" }) });
@@ -204,6 +225,15 @@ try {
   if (!(await visible(b.getByText(/צפייה בלבד/)))) fail("B should see roll call read-only");
   await b.screenshot({ path: `${OUT}/roll-call-readonly.png` });
   step("B sees roll call read-only");
+
+  // ---- Icons are served -------------------------------------------------
+  for (const path of ["/icons/icon-192.png", "/icons/icon-512.png", "/apple-icon.png", "/icon.png"]) {
+    const res = await fetch(`${BASE}${path}`);
+    if (!res.ok || !res.headers.get("content-type")?.includes("image/png")) fail(`${path} not served as PNG`);
+  }
+  const manifest = await (await fetch(`${BASE}/manifest.webmanifest`)).json();
+  if (!manifest.icons?.some((i) => i.purpose === "maskable")) fail("manifest has no maskable icon");
+  step("icons and manifest served");
 
   // ---- Signed-out access is redirected -----------------------------------
   const ctxC = await browser.newContext();

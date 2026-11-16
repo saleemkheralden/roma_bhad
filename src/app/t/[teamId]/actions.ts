@@ -46,6 +46,57 @@ export async function addMember(teamId: number, _p: ActionResult, formData: Form
   );
 }
 
+export async function updateMember(teamId: number, memberId: number, _p: ActionResult, formData: FormData) {
+  const first = text(formData, "first_name");
+  if (!first) return { error: strings.common.genericError };
+  return run((db) =>
+    db
+      .from("team_members")
+      .update({ first_name: first, last_name: text(formData, "last_name") }, { count: "exact" })
+      .eq("team_id", teamId)
+      .eq("id", memberId),
+  );
+}
+
+/** One name per line: "first last…", or two columns (tab/comma) pasted from a sheet. */
+export async function importMembers(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const lines = String(formData.get("names") ?? "")
+    .split(/\r?\n/)
+    .map((l) => l.replace(/^\s*\d+[.)\-]?\s*/, "").trim()) // drop "1." / "2)" numbering
+    .filter(Boolean);
+  if (lines.length === 0) return { error: strings.team.pasteEmpty };
+  if (lines.length > 60) return { error: strings.team.pasteTooMany };
+
+  const people = lines.map((line) => {
+    const parts = /[\t,]/.test(line) ? line.split(/[\t,]/) : line.split(/\s+/);
+    const [first, ...rest] = parts.map((p) => p.trim()).filter(Boolean);
+    return { first_name: (first ?? "").slice(0, 40), last_name: rest.join(" ").slice(0, 40) };
+  });
+
+  const supabase = await createClient();
+  const { data: existing, error: readError } = await supabase
+    .from("team_members")
+    .select("first_name, last_name")
+    .eq("team_id", teamId);
+  if (readError) return fail(readError);
+
+  const key = (p: { first_name: string; last_name: string }) => `${p.first_name} ${p.last_name}`.replace(/\s+/g, " ").trim();
+  const seen = new Set((existing ?? []).map(key));
+  const fresh = people.filter((p) => {
+    const k = key(p);
+    if (!p.first_name || seen.has(k)) return false;
+    seen.add(k);
+    return true;
+  });
+
+  if (fresh.length > 0) {
+    const { error } = await supabase.from("team_members").insert(fresh.map((p) => ({ team_id: teamId, ...p })));
+    if (error) return fail(error);
+  }
+  refresh();
+  return { ok: true, message: strings.team.pasteResult(fresh.length, people.length - fresh.length) };
+}
+
 export async function removeMember(teamId: number, memberId: number) {
   return run((db) =>
     db.from("team_members").delete({ count: "exact" }).eq("team_id", teamId).eq("id", memberId),

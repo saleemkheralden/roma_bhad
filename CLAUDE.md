@@ -65,4 +65,5 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `npx supabase migration new <name>`: new migration; `npx supabase db reset --yes`: re-apply all migrations locally
 - `npm run db:test`: pgTAP RLS tests (`supabase/tests/`); `npm run db:types`: regenerate `src/lib/supabase/database.types.ts`
 - `npx supabase db advisors --type all`: security and performance checks
+- `node scripts/make-icons.mjs`: re-render the app icons (then re-embed provenance with `impeccable embed-prompt`)
 - `node scripts/e2e-smoke.mjs`: end-to-end smoke test in headless Chrome (needs `npm run dev` + local Supabase); screenshots go to `.impeccable/review/`

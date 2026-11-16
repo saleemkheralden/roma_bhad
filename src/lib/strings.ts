@@ -150,6 +150,19 @@ export const strings = {
     current: "עכשיו",
     upcoming: "בקרוב",
     lastAdmin: "לצוות חייב להיות לפחות אחראי/ת אחד/ת.",
+    editName: "שמירת שם",
+    pasteList: "הדבקת רשימה",
+    pasteLabel: "שם בכל שורה",
+    pasteHint: "שם פרטי ואז שם משפחה. אפשר להדביק מוואטסאפ או מאקסל (שתי עמודות).",
+    pastePlaceholder: "נועה ברק\nאיתי לוי\nמאיה כהן",
+    pasteSubmit: "הוספת השמות",
+    pasteEmpty: "לא מצאנו שמות בטקסט.",
+    pasteTooMany: "אפשר להדביק עד 60 שמות בכל פעם.",
+    pasteResult: (added: number, skipped: number) => {
+      const main = added === 0 ? "לא נוספו שמות חדשים" : added === 1 ? "נוסף שם אחד" : `נוספו ${added} שמות`;
+      const rest = skipped === 0 ? "" : skipped === 1 ? " (שם אחד כבר היה ברשימה)" : ` (${skipped} כבר היו ברשימה)`;
+      return main + rest;
+    },
   },
   links: {
     title: "קישורים",

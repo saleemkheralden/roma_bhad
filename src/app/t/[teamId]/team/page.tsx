@@ -5,18 +5,20 @@ import { fullName, getTeamContext } from "@/lib/data";
 import { shortDate, weekdayOf } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section } from "@/components/section";
-import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
+import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import {
   addAssignment,
   addMember,
   addRole,
+  importMembers,
   regenerateInvite,
   removeAssignment,
   removeMember,
   removeRole,
   setMemberFlag,
+  updateMember,
 } from "../actions";
 
 const s = strings.team;
@@ -57,7 +59,7 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
               </div>
             );
             const canRemove = canManage && !isMe;
-            if (!isAdmin && !canRemove) {
+            if (!isAdmin && !canManage) {
               return (
                 <li key={m.id} className="flex min-h-14 items-center py-2">
                   {row}
@@ -71,7 +73,16 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
                     {row}
                     <ChevronDown aria-hidden size={20} className="shrink-0 text-ink-2 transition-transform group-open:rotate-180" />
                   </summary>
-                  <div className="mb-3 rounded-[var(--radius-control)] bg-paper p-3">
+                  <div className="mb-3 flex flex-col gap-4 rounded-[var(--radius-control)] bg-paper p-3">
+                    {canManage ? (
+                      <ActionForm action={updateMember.bind(null, teamId, m.id)} className="flex flex-col gap-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Field label={strings.join.firstName} name="first_name" defaultValue={m.first_name} required maxLength={40} />
+                          <Field label={strings.join.lastName} name="last_name" defaultValue={m.last_name} maxLength={40} />
+                        </div>
+                        <SubmitButton variant="outline">{s.editName}</SubmitButton>
+                      </ActionForm>
+                    ) : null}
                     {isAdmin ? (
                       <div className="flex flex-wrap gap-2">
                         <ActionButton action={setMemberFlag.bind(null, teamId, m.id, "is_admin", !m.is_admin)} variant="outline">
@@ -83,7 +94,7 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
                       </div>
                     ) : null}
                     {canRemove ? (
-                      <div className={isAdmin ? "mt-5 border-t border-rule pt-3" : ""}>
+                      <div className="mt-1 border-t border-rule pt-3">
                         <ActionButton
                           action={removeMember.bind(null, teamId, m.id)}
                           confirm={`${strings.common.remove}: ${fullName(m)}?`}
@@ -109,6 +120,17 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
             </div>
             <SubmitButton variant="outline">{s.addMember}</SubmitButton>
           </ActionForm>
+        ) : null}
+        {canManage ? (
+          <EditArea
+            title={s.pasteList}
+            add={
+              <ActionForm action={importMembers.bind(null, teamId)} className="flex flex-col gap-2">
+                <TextArea label={s.pasteLabel} hint={s.pasteHint} name="names" placeholder={s.pastePlaceholder} required />
+                <SubmitButton variant="outline">{s.pasteSubmit}</SubmitButton>
+              </ActionForm>
+            }
+          />
         ) : null}
       </Section>
 
