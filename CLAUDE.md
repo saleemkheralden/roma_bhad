@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 1, MVP. The Phase 1 screens work locally (sign-in, create/join, roster, roles, roll call, links). Still to do: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 2 done locally (tasks, my day, evening catch-up) on top of Phase 1. Still to do for going online: hosted Supabase project, Google OAuth, deploy. Repo: `saleemkheralden/team-hub` (private), Vercel project `team-hub`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
@@ -47,12 +47,14 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `teams` (with `invite_code`), `team_members` (the roster; `user_id` is null until the cadet joins and claims the name; `is_admin`, `is_staff`), `team_roles` (configurable), `role_assignments` (role + member + date range), `attendance_sessions` / `attendance_entries`, `links`.
 - Permission helpers live in the unexposed `private` schema: `is_team_member`, `is_team_admin`, `can_command` (staff, or a command role today in Asia/Jerusalem), `can_manage` (admin or command). `public.my_permissions()` exposes them to the UI for display only.
 - RPCs: `create_team`, `preview_team`, `join_team`, `regenerate_invite_code`. New tables need explicit `grant`s (Supabase no longer exposes them automatically).
-- Planned: `companies`, `tasks(visibility: team|private)`, `integrations`. See `ROADMAP.md` §2.
+- `tasks` (Phase 2): `visibility` team|private (immutable), `assignee_member_id` (null = whole team), `due_on` + optional `due_time`, `status` open|done. Trigger `private.guard_tasks` forces `owner_id` to the caller on private tasks, sets `done_at`/`done_by`, and lets a non-command assignee change only `status`. Team-wide tasks are closed by command only.
+- Planned: `companies`, `integrations`. See `ROADMAP.md` §2.
 
 ## Gotchas
 - Next.js 16 `cacheComponents`: per-user data goes inside `<Suspense>`; the server Supabase client calls `connection()` so it always renders at request time.
 - Recently visited routes stay mounted but hidden (`<Activity>`), so tests must scope selectors to the visible page.
 - Tailwind classes don't override each other by order: size/padding/colour live only in `button-class.ts` variants; don't pass a competing `px-*`/`h-*`/`text-*`.
+- pgTAP tests must scope counts to their own fixture team: the local DB also holds smoke-test data.
 - Sign-in emails must contain the 6-digit code: templates in `supabase/templates/` (set the same template in the hosted dashboard).
 
 ## Commands
@@ -62,7 +64,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `vercel deploy -y --no-wait`: deploy from the CLI (until GitHub auto-deploy is connected)
 - `npx impeccable detect src`: scan the UI for design issues
 - `npx supabase start` / `npx supabase stop`: local Supabase (Docker Desktop must be running). Studio http://127.0.0.1:54323, Mailpit (sign-in codes) http://127.0.0.1:54324
-- `npx supabase migration new <name>`: new migration; `npx supabase db reset --yes`: re-apply all migrations locally
+- `npx supabase migration new <name>`: new migration; `npx supabase migration up --local`: apply new migrations and keep local data; `npx supabase db reset --yes`: wipe and re-apply everything
 - `npm run db:test`: pgTAP RLS tests (`supabase/tests/`); `npm run db:types`: regenerate `src/lib/supabase/database.types.ts`
 - `npx supabase db advisors --type all`: security and performance checks
 - `node scripts/make-icons.mjs`: re-render the app icons (then re-embed provenance with `impeccable embed-prompt`)

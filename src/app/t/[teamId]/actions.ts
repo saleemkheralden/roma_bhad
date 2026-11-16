@@ -184,6 +184,46 @@ export async function deleteSession(teamId: number, sessionId: number) {
   redirect(`/t/${teamId}/attendance`);
 }
 
+// Tasks ----------------------------------------------------------------------
+
+export async function createTask(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const title = text(formData, "title");
+  const visibility = text(formData, "visibility") === "team" ? "team" : "private";
+  const dueOn = text(formData, "due_on") || null;
+  const dueTime = dueOn ? text(formData, "due_time") || null : null;
+  const assignee = visibility === "team" ? Number(text(formData, "assignee_member_id")) || null : null;
+  if (!title) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const { error } = await supabase.from("tasks").insert({
+    team_id: teamId,
+    visibility,
+    title: title.slice(0, 120),
+    notes: text(formData, "notes").slice(0, 500),
+    due_on: dueOn,
+    due_time: dueTime,
+    assignee_member_id: assignee,
+    created_by: claims?.claims?.sub,
+  });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true };
+}
+
+export async function setTaskDone(teamId: number, taskId: number, done: boolean) {
+  return run((db) =>
+    db
+      .from("tasks")
+      .update({ status: done ? "done" : "open" }, { count: "exact" })
+      .eq("team_id", teamId)
+      .eq("id", taskId),
+  );
+}
+
+export async function deleteTask(teamId: number, taskId: number) {
+  return run((db) => db.from("tasks").delete({ count: "exact" }).eq("team_id", teamId).eq("id", taskId));
+}
+
 // Links ----------------------------------------------------------------------
 
 export async function addLink(teamId: number, _p: ActionResult, formData: FormData) {

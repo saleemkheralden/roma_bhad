@@ -189,6 +189,38 @@ try {
   await a.screenshot({ path: `${OUT}/links.png` });
   step("link added");
 
+  // ---- A: tasks ---------------------------------------------------------
+  const todayIso = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  const tomorrowIso = new Date(Date.now() + 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
+  await a.goto(`${BASE}/t/${teamId}/tasks`);
+  const newTask = async ({ title, team, assignee, due, time }) => {
+    await a.locator("summary", { hasText: "משימה חדשה" }).click();
+    const form = a.locator("form", { has: a.getByRole("button", { name: "הוספה", exact: true }) });
+    await form.getByLabel("מה צריך לעשות").fill(title);
+    await form.getByText(team ? "משימת צוות" : "פרטית (רק אני)").click();
+    if (team && assignee) await form.getByLabel("מבצע/ת").selectOption({ label: assignee });
+    if (due) await form.getByLabel("תאריך יעד").fill(due);
+    if (time) await form.getByLabel("שעה").fill(time);
+    await form.getByRole("button", { name: "הוספה", exact: true }).click();
+    await a.locator("summary", { hasText: "משימה חדשה" }).click(); // close
+  };
+  await newTask({ title: "להגיש סיכום שיעור", team: true, assignee: "תמר גולן", due: todayIso, time: "14:00" });
+  await newTask({ title: "למלא משוב קורס", team: true, due: tomorrowIso });
+  await newTask({ title: "להתקשר הביתה", team: false, due: todayIso });
+  await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
+  await a.getByText("להגיש סיכום שיעור").first().waitFor();
+  await a.getByText("למלא משוב קורס").first().waitFor();
+  await a.screenshot({ path: `${OUT}/tasks.png`, fullPage: true });
+  step("A created two team tasks and a private one");
+
+  await a.goto(`${BASE}/t/${teamId}`);
+  await a.getByText("המשימות שלי להיום").first().waitFor();
+  if (!(await a.getByRole("checkbox", { name: /להתקשר הביתה/ }).first().isVisible())) fail("my day should list the private task due today");
+  if (!(await a.getByText("נוספו היום לצוות").first().isVisible())) fail("catch-up should list team tasks added today");
+  if (!(await a.getByText("למחר").first().isVisible())) fail("catch-up should list tasks due tomorrow");
+  await a.screenshot({ path: `${OUT}/today-tasks.png`, fullPage: true });
+  step("Today shows my day and the catch-up");
+
   await a.goto(`${BASE}/t/${teamId}/attendance`);
   await a.getByText("נוכחויות אחרונות").first().waitFor();
   await a.screenshot({ path: `${OUT}/attendance.png` });
@@ -225,6 +257,24 @@ try {
   if (!(await visible(b.getByText(/צפייה בלבד/)))) fail("B should see roll call read-only");
   await b.screenshot({ path: `${OUT}/roll-call-readonly.png` });
   step("B sees roll call read-only");
+
+  // ---- B: tasks ---------------------------------------------------------
+  await b.goto(`${BASE}/t/${teamId}/tasks`);
+  const bTask = b.getByRole("checkbox", { name: /להגיש סיכום שיעור/ });
+  await bTask.waitFor();
+  if (await b.getByText("להתקשר הביתה").count()) fail("B can see A's private task");
+  await b.locator("summary", { hasText: "משימה חדשה" }).click();
+  if (await b.getByText("משימת צוות", { exact: true }).count()) fail("B (no role) is offered a team task");
+  await b.locator("summary", { hasText: "משימה חדשה" }).click();
+  if (!(await b.getByRole("checkbox", { name: /למלא משוב קורס/ }).isDisabled())) fail("B can tick a team-wide task");
+  await bTask.click();
+  await b.waitForTimeout(800);
+  await b.reload();
+  await b.locator("summary", { hasText: "הושלמו" }).click();
+  const checked = await b.getByRole("checkbox", { name: /להגיש סיכום שיעור/ }).getAttribute("aria-checked");
+  if (checked !== "true") fail(`B's done task did not persist (aria-checked=${checked})`);
+  await b.screenshot({ path: `${OUT}/tasks-cadet.png`, fullPage: true });
+  step("B ticks their assigned task; sees no private or team-create options");
 
   // ---- Icons are served -------------------------------------------------
   for (const path of ["/icons/icon-192.png", "/icons/icon-512.png", "/apple-icon.png", "/icon.png"]) {

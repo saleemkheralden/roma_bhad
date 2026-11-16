@@ -121,6 +121,32 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"tasks": {
+                  Row: {
+                    "assignee_member_id": number | null,"created_at": string,"created_by": string | null,"done_at": string | null,"done_by": string | null,"due_on": string | null,"due_time": string | null,"id": number,"notes": string,"owner_id": string | null,"status": string,"team_id": number,"title": string,"visibility": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "assignee_member_id"?: number | null,"created_at"?: string,"created_by"?: string | null,"done_at"?: string | null,"done_by"?: string | null,"due_on"?: string | null,"due_time"?: string | null,"id"?: never,"notes"?: string,"owner_id"?: string | null,"status"?: string,"team_id": number,"title": string,"visibility": string
+                  }
+                  Update: {
+                    "assignee_member_id"?: number | null,"created_at"?: string,"created_by"?: string | null,"done_at"?: string | null,"done_by"?: string | null,"due_on"?: string | null,"due_time"?: string | null,"id"?: never,"notes"?: string,"owner_id"?: string | null,"status"?: string,"team_id"?: number,"title"?: string,"visibility"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "tasks_assignee_member_id_team_id_fkey"
+      columns: ["assignee_member_id","team_id"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["id","team_id"]
+    },{
+      foreignKeyName: "tasks_team_id_fkey"
+      columns: ["team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"team_members": {
                   Row: {
                     "created_at": string,"first_name": string,"id": number,"is_admin": boolean,"is_staff": boolean,"last_name": string,"nickname": string | null,"sort_order": number,"team_id": number,"user_id": string | null

@@ -12,6 +12,7 @@ export type Assignment = Tables["role_assignments"]["Row"];
 export type Session = Tables["attendance_sessions"]["Row"];
 export type Entry = Tables["attendance_entries"]["Row"];
 export type LinkRow = Tables["links"]["Row"];
+export type Task = Tables["tasks"]["Row"];
 export type AttendanceStatus = "present" | "late" | "absent";
 
 export type Permissions = {
@@ -126,6 +127,21 @@ export async function getSession(teamId: number, sessionId: number) {
     .maybeSingle();
   if (error) throw error;
   return data;
+}
+
+/** Open tasks plus the last week's done ones the viewer may see (RLS filters private tasks). */
+export async function getTasks(teamId: number) {
+  const supabase = await createClient();
+  const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
+  const { data, error } = await supabase
+    .from("tasks")
+    .select("*")
+    .eq("team_id", teamId)
+    .or(`status.eq.open,done_at.gte.${weekAgo}`)
+    .order("due_on", { ascending: true, nullsFirst: false })
+    .limit(300);
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getLinks(teamId: number) {

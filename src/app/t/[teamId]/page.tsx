@@ -1,29 +1,42 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronDown, ExternalLink } from "lucide-react";
-import { fullName, getLinks, getSessions, getTeamContext } from "@/lib/data";
+import { fullName, getLinks, getSessions, getTasks, getTeamContext, type Task } from "@/lib/data";
 import { isoDate } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { tally, type Mark } from "@/lib/attendance";
+import { bucketOf, byDue, canToggle, dueLabel, isMine } from "@/lib/tasks";
 import { buttonClass } from "@/components/button-class";
 import { Section, TallyBar } from "@/components/section";
 import { StartRollCall } from "./start-roll-call";
-import { startRollCall } from "./actions";
+import { setTaskDone, startRollCall } from "./actions";
+import { TaskRow } from "./tasks/task-row";
 
 const t = strings.today;
 const a = strings.attendance;
 
-function defaultLabel() {
-  const hour = Number(
+const c = strings.catchUp;
+
+function israelHour() {
+  return Number(
     new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Jerusalem", hour: "numeric", hour12: false }).format(new Date()),
   );
+}
+
+function defaultLabel() {
+  const hour = israelHour();
   const [morning, noon, evening] = a.labels;
   return hour < 11 ? morning : hour < 17 ? noon : evening;
 }
 
 async function Today({ params }: { params: Promise<{ teamId: string }> }) {
   const teamId = Number((await params).teamId);
-  const [ctx, sessions, links] = await Promise.all([getTeamContext(teamId), getSessions(teamId, 5), getLinks(teamId)]);
+  const [ctx, sessions, links, tasks] = await Promise.all([
+    getTeamContext(teamId),
+    getSessions(teamId, 5),
+    getLinks(teamId),
+    getTasks(teamId),
+  ]);
   const latest = sessions.find((s) => isoDate(new Date(s.created_at)) === ctx.today);
   const total = ctx.roster.length;
   const canCommand = ctx.permissions.can_command;
@@ -87,8 +100,80 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
     );
   }
 
+  const myId = ctx.me?.id ?? null;
+  const names = new Map(ctx.roster.map((m) => [m.id, fullName(m)]));
+  const taskRow = (task: Task) => (
+    <TaskRow
+      key={`${task.id}-${task.status}`}
+      title={task.title}
+      notes={task.notes}
+      due={dueLabel(task, ctx.today)}
+      overdue={bucketOf(task, ctx.today) === "overdue"}
+      who={
+        task.visibility === "private"
+          ? ""
+          : task.assignee_member_id
+            ? names.get(task.assignee_member_id) ?? ""
+            : strings.tasks.everyone
+      }
+      isPrivate={task.visibility === "private"}
+      done={task.status === "done"}
+      canToggle={canToggle(task, myId, canCommand)}
+      toggle={setTaskDone.bind(null, teamId, task.id)}
+    />
+  );
+  const open = tasks.filter((x) => x.status === "open");
+  const myDay = open
+    .filter((x) => isMine(x, myId) && ["overdue", "today"].includes(bucketOf(x, ctx.today)))
+    .sort(byDue);
+  const newToday = tasks
+    .filter((x) => x.visibility === "team" && isoDate(new Date(x.created_at)) === ctx.today)
+    .sort(byDue);
+  const dueTomorrow = open.filter((x) => bucketOf(x, ctx.today) === "tomorrow" && isMine(x, myId)).sort(byDue);
+  const evening = israelHour() >= 17;
+
+  const tasksLink = (
+    <Link href={`/t/${teamId}/tasks`} className="inline-flex min-h-11 items-center text-sm font-bold underline">
+      {strings.tasks.all}
+    </Link>
+  );
+
+  const myDaySection = (
+    <Section key="my-day" title={c.myDay} aside={tasksLink}>
+      {myDay.length === 0 ? (
+        <p className="text-base text-ink-2">{c.myDayEmpty}</p>
+      ) : (
+        <ul className="divide-y divide-rule border-y border-rule">{myDay.slice(0, 6).map(taskRow)}</ul>
+      )}
+    </Section>
+  );
+
+  const catchUpSection = (
+    <Section key="catch-up" title={c.title}>
+      {newToday.length === 0 && dueTomorrow.length === 0 ? (
+        <p className="text-base text-ink-2">{c.nothing}</p>
+      ) : (
+        <>
+          {newToday.length > 0 ? (
+            <>
+              <h3 className="mb-1 text-sm font-extrabold text-ink-2">{c.newToday}</h3>
+              <ul className="mb-4 divide-y divide-rule border-y border-rule">{newToday.slice(0, 8).map(taskRow)}</ul>
+            </>
+          ) : null}
+          {dueTomorrow.length > 0 ? (
+            <>
+              <h3 className="mb-1 text-sm font-extrabold text-ink-2">{c.dueTomorrow}</h3>
+              <ul className="divide-y divide-rule border-y border-rule">{dueTomorrow.slice(0, 8).map(taskRow)}</ul>
+            </>
+          ) : null}
+        </>
+      )}
+    </Section>
+  );
+
   return (
     <>
+      {evening ? catchUpSection : null}
       <Section title={t.rollCall}>
         {rollCall ?? (
           <>
@@ -101,6 +186,9 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
           </>
         )}
       </Section>
+
+      {myDaySection}
+      {evening ? null : catchUpSection}
 
       <Section
         title={t.links}
