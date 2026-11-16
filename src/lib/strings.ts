@@ -26,7 +26,7 @@ export const strings = {
     or: "או עם קוד במייל",
     email: "כתובת מייל",
     sendCode: "שליחת קוד",
-    codeSent: (email: string) => `שלחנו קוד בן 6 ספרות אל ${email}`,
+    codeSent: (email: string) => `שלחנו מייל אל ${email}. הקלידו את הקוד שבו, או לחצו על הקישור שבמייל (באותו דפדפן).`,
     code: "קוד",
     verify: "כניסה",
     otherEmail: "מייל אחר",

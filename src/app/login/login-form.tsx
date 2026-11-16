@@ -29,7 +29,12 @@ export function LoginForm() {
     setError(null);
     const { error } = await createClient().auth.signInWithOtp({
       email: email.trim(),
-      options: { shouldCreateUser: true },
+      // Hosted free projects send Supabase's default email (a link, no code): the link
+      // lands on /auth/callback. Locally (and with custom SMTP) the email carries the code.
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+      },
     });
     setBusy(false);
     if (error) setError(s.sendFailed);
