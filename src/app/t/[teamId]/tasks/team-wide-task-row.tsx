@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { Check, ChevronDown } from "lucide-react";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui";
@@ -22,6 +22,7 @@ export function TeamWideTaskRow({
   canCommand,
   setCompletion,
   closeTask,
+  editor,
 }: {
   title: string;
   notes: string;
@@ -33,6 +34,7 @@ export function TeamWideTaskRow({
   canCommand: boolean;
   setCompletion: (memberId: number, done: boolean) => Promise<ActionResult>;
   closeTask: (done: boolean) => Promise<ActionResult>;
+  editor?: ReactNode;
 }) {
   const [done, setDone] = useState(() => new Set(initialDone));
   // When fresh server data arrives, adopt it without remounting (keeps the panel open).
@@ -101,6 +103,7 @@ export function TeamWideTaskRow({
             <span>{s.everyone}</span>
             <span className="font-bold text-present-ink">{s.progress(finished, members.length)}</span>
           </p>
+          {editor}
         </div>
         <button
           type="button"

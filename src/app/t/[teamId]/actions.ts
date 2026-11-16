@@ -220,6 +220,36 @@ export async function setTaskDone(teamId: number, taskId: number, done: boolean)
   );
 }
 
+/** Edit a task's text, notes, due date/time and (team tasks) assignee. RLS + trigger decide who may. */
+export async function updateTask(
+  teamId: number,
+  taskId: number,
+  isTeam: boolean,
+  _p: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const title = text(formData, "title");
+  if (!title) return { error: strings.common.genericError };
+  const dueOn = text(formData, "due_on") || null;
+  const changes = {
+    title: title.slice(0, 120),
+    notes: text(formData, "notes").slice(0, 500),
+    due_on: dueOn,
+    due_time: dueOn ? text(formData, "due_time") || null : null,
+    ...(isTeam ? { assignee_member_id: Number(text(formData, "assignee_member_id")) || null } : {}),
+  };
+  const supabase = await createClient();
+  const { error, count } = await supabase
+    .from("tasks")
+    .update(changes, { count: "exact" })
+    .eq("team_id", teamId)
+    .eq("id", taskId);
+  if (error) return fail(error);
+  if (count === 0) return { error: strings.common.noPermission };
+  refresh();
+  return { ok: true };
+}
+
 /** Mark or unmark one cadet's part of a team-wide task (own part, or anyone's for command). */
 export async function setCompletion(teamId: number, taskId: number, memberId: number, done: boolean) {
   if (done) {

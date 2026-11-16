@@ -1,7 +1,7 @@
 -- RLS and trigger tests for tasks (Phase 2). Run with: npx supabase test db
 begin;
 create extension if not exists pgtap with schema extensions;
-select plan(20);
+select plan(21);
 
 insert into auth.users (id, email) values
   ('00000000-0000-0000-0000-0000000000a1', 'cmd@test.local'),   -- role-holder today (command)
@@ -68,10 +68,12 @@ update public.tasks set status = 'done' where title = 'משימה לכל הצו�
 select is((select status from public.tasks where title = 'משימה לכל הצוות'), 'open', 'cadet cannot close a team-wide task');
 select throws_ok($$ update public.tasks set visibility = 'team' where title = 'לכבס מדים' $$,
   '42501', null, 'a private task cannot be promoted to a team task');
+select lives_ok($$ update public.tasks set title = 'לכבס מדים ב', due_on = private.today() + 2 where title = 'לכבס מדים' $$,
+  'the owner edits their private task');
 
 -- Another cadet -----------------------------------------------------------
 select pg_temp.as_user('00000000-0000-0000-0000-0000000000c1');
-select is((select count(*)::int from public.tasks where title = 'לכבס מדים'), 0, 'other cadets cannot see a private task');
+select is((select count(*)::int from public.tasks where title like 'לכבס מדים%'), 0, 'other cadets cannot see a private task');
 delete from public.tasks where title = 'להגיש סיכום שיעור'; -- filtered by RLS
 select pg_temp.as_postgres();
 select is((select count(*)::int from public.tasks where title = 'להגיש סיכום שיעור' and team_id = (select team_id from t)), 1,

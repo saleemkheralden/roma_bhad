@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
@@ -17,6 +17,7 @@ export function TaskRow({
   done: initialDone,
   canToggle,
   toggle,
+  editor,
 }: {
   title: string;
   notes: string;
@@ -27,6 +28,7 @@ export function TaskRow({
   done: boolean;
   canToggle: boolean;
   toggle: (done: boolean) => Promise<ActionResult>;
+  editor?: ReactNode;
 }) {
   const [done, setDone] = useState(initialDone);
   const [error, setError] = useState<string | null>(null);
@@ -81,6 +83,7 @@ export function TaskRow({
             {error}
           </p>
         ) : null}
+        {editor}
       </div>
     </li>
   );

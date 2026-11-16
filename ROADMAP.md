@@ -140,7 +140,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Mark done (assignee or command); overdue group; done tasks of the last week collapsed
 - [x] Evening catch-up on Today: team tasks added today, due tomorrow (moves to the top after 17:00)
 - [ ] Catch-up: tomorrow's calendar events (needs Phase 3)
-- [ ] Edit a task's text after creating it
+- [x] Edit a task after creating it (text, notes, date/time, assignee; command for team tasks, owner for private)
 - [x] Team-wide tasks done per cadet: each cadet marks their part, progress and who's missing, command marks cadets without a phone and closes the task
 
 ### Phase 3: Integrations

@@ -213,6 +213,16 @@ try {
   await a.screenshot({ path: `${OUT}/tasks.png`, fullPage: true });
   step("A created two team tasks and a private one");
 
+  // Edit a team task's text and time.
+  await a.getByRole("button", { name: "עריכת המשימה: להגיש סיכום שיעור" }).first().click();
+  const taskEditForm = a.locator("form", { has: a.getByRole("button", { name: "שמירה", exact: true }) });
+  await taskEditForm.getByLabel("מה צריך לעשות").fill("להגיש סיכום שיעור מתוקן");
+  await taskEditForm.getByLabel("שעה").fill("15:00");
+  await taskEditForm.getByRole("button", { name: "שמירה", exact: true }).click();
+  await a.getByText("להגיש סיכום שיעור מתוקן").first().waitFor();
+  await a.getByText("היום 15:00").first().waitFor();
+  step("A edited a team task (text and time)");
+
   await a.goto(`${BASE}/t/${teamId}`);
   await a.getByText("המשימות שלי להיום").first().waitFor();
   if (!(await a.getByRole("checkbox", { name: /להתקשר הביתה/ }).first().isVisible())) fail("my day should list the private task due today");
@@ -262,6 +272,7 @@ try {
   await b.goto(`${BASE}/t/${teamId}/tasks`);
   const bTask = b.getByRole("checkbox", { name: /להגיש סיכום שיעור/ });
   await bTask.waitFor();
+  if (await b.getByRole("button", { name: /^עריכת המשימה: להגיש/ }).count()) fail("B can edit a team task");
   if (await b.getByText("להתקשר הביתה").count()) fail("B can see A's private task");
   await b.locator("summary", { hasText: "משימה חדשה" }).click();
   if (await b.getByText("משימת צוות", { exact: true }).count()) fail("B (no role) is offered a team task");

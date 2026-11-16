@@ -205,6 +205,9 @@ export const strings = {
     markFor: (name: string) => `סימון ${name} כסיים/ה`,
     unmarkFor: (name: string) => `ביטול הסימון של ${name}`,
     closeTask: "סגירת המשימה לכולם",
+    edit: "עריכה",
+    editTitle: (title: string) => `עריכת המשימה: ${title}`,
+    save: "שמירה",
     commandMarksHint: "אפשר לסמן גם מי שאין לו טלפון כרגע.",
   },
   catchUp: {
