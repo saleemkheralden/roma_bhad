@@ -220,6 +220,27 @@ export async function setTaskDone(teamId: number, taskId: number, done: boolean)
   );
 }
 
+/** Mark or unmark one cadet's part of a team-wide task (own part, or anyone's for command). */
+export async function setCompletion(teamId: number, taskId: number, memberId: number, done: boolean) {
+  if (done) {
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("task_completions")
+      .insert({ task_id: taskId, team_id: teamId, member_id: memberId });
+    if (error && error.code !== "23505") return fail(error); // already marked is fine
+    refresh();
+    return { ok: true };
+  }
+  return run((db) =>
+    db
+      .from("task_completions")
+      .delete({ count: "exact" })
+      .eq("team_id", teamId)
+      .eq("task_id", taskId)
+      .eq("member_id", memberId),
+  );
+}
+
 export async function deleteTask(teamId: number, taskId: number) {
   return run((db) => db.from("tasks").delete({ count: "exact" }).eq("team_id", teamId).eq("id", taskId));
 }

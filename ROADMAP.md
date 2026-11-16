@@ -141,7 +141,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Evening catch-up on Today: team tasks added today, due tomorrow (moves to the top after 17:00)
 - [ ] Catch-up: tomorrow's calendar events (needs Phase 3)
 - [ ] Edit a task's text after creating it
-- [ ] Team-wide tasks done per cadet (today only command closes them)
+- [x] Team-wide tasks done per cadet: each cadet marks their part, progress and who's missing, command marks cadets without a phone and closes the task
 
 ### Phase 3: Integrations
 - [ ] Settings: paste the team's Google Calendar ID → embedded iframe

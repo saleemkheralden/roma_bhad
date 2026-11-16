@@ -47,7 +47,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `teams` (with `invite_code`), `team_members` (the roster; `user_id` is null until the cadet joins and claims the name; `is_admin`, `is_staff`), `team_roles` (configurable), `role_assignments` (role + member + date range), `attendance_sessions` / `attendance_entries`, `links`.
 - Permission helpers live in the unexposed `private` schema: `is_team_member`, `is_team_admin`, `can_command` (staff, or a command role today in Asia/Jerusalem), `can_manage` (admin or command). `public.my_permissions()` exposes them to the UI for display only.
 - RPCs: `create_team`, `preview_team`, `join_team`, `regenerate_invite_code`. New tables need explicit `grant`s (Supabase no longer exposes them automatically).
-- `tasks` (Phase 2): `visibility` team|private (immutable), `assignee_member_id` (null = whole team), `due_on` + optional `due_time`, `status` open|done. Trigger `private.guard_tasks` forces `owner_id` to the caller on private tasks, sets `done_at`/`done_by`, and lets a non-command assignee change only `status`. Team-wide tasks are closed by command only.
+- `tasks` (Phase 2): `visibility` team|private (immutable), `assignee_member_id` (null = whole team), `due_on` + optional `due_time`, `status` open|done. Trigger `private.guard_tasks` forces `owner_id` to the caller on private tasks, sets `done_at`/`done_by`, and lets a non-command assignee change only `status`. Team-wide tasks (no assignee) are closed by command only; each cadet's part lives in `task_completions` (own row, or anyone's for command; only while the task is open).
 - Planned: `companies`, `integrations`. See `ROADMAP.md` §2.
 
 ## Gotchas

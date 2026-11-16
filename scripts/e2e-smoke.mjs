@@ -266,7 +266,13 @@ try {
   await b.locator("summary", { hasText: "משימה חדשה" }).click();
   if (await b.getByText("משימת צוות", { exact: true }).count()) fail("B (no role) is offered a team task");
   await b.locator("summary", { hasText: "משימה חדשה" }).click();
-  if (!(await b.getByRole("checkbox", { name: /למלא משוב קורס/ }).isDisabled())) fail("B can tick a team-wide task");
+  // Team-wide task: B marks their own part, and can't mark anyone else.
+  await b.getByRole("checkbox", { name: /סימון החלק שלי כבוצע: למלא משוב קורס/ }).click();
+  await b.getByText("1/13 סיימו").first().waitFor();
+  await b.getByRole("button", { name: "מי סיים" }).first().click();
+  if (!(await b.getByRole("button", { name: "סימון נועה ברק כסיים/ה" }).isDisabled())) fail("B can mark another cadet");
+  if (await b.getByRole("button", { name: "סגירת המשימה לכולם" }).count()) fail("B can close a team-wide task");
+  step("B marks their own part of a team-wide task (1/13), not others'");
   await bTask.click();
   await b.waitForTimeout(800);
   await b.reload();
@@ -275,6 +281,18 @@ try {
   if (checked !== "true") fail(`B's done task did not persist (aria-checked=${checked})`);
   await b.screenshot({ path: `${OUT}/tasks-cadet.png`, fullPage: true });
   step("B ticks their assigned task; sees no private or team-create options");
+
+  // ---- A: marks a cadet without a phone, then closes the team-wide task ----
+  await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
+  await a.getByText("1/13 סיימו").first().waitFor();
+  await a.getByRole("button", { name: "מי סיים" }).first().click();
+  await a.getByRole("button", { name: "סימון עדי רוזנברג כסיים/ה" }).click();
+  await a.getByText("2/13 סיימו").first().waitFor();
+  await a.waitForTimeout(600);
+  await a.screenshot({ path: `${OUT}/tasks-team-wide.png`, fullPage: true });
+  await a.getByRole("button", { name: "סגירת המשימה לכולם" }).click();
+  await a.locator("summary", { hasText: "הושלמו" }).waitFor();
+  step("command marked a cadet (2/13) and closed the task");
 
   // ---- Icons are served -------------------------------------------------
   for (const path of ["/icons/icon-192.png", "/icons/icon-512.png", "/apple-icon.png", "/icon.png"]) {

@@ -11,6 +11,7 @@ export type TaskLike = {
   assignee_member_id: number | null;
   owner_id: string | null;
   created_at: string;
+  task_completions?: { member_id: number }[];
 };
 
 export type Bucket = "overdue" | "today" | "tomorrow" | "later" | "none";
@@ -56,6 +57,17 @@ export function isMine(t: TaskLike, myMemberId: number | null) {
     t.assignee_member_id === null ||
     (myMemberId !== null && t.assignee_member_id === myMemberId)
   );
+}
+
+/** A team task for the whole team: each cadet marks their own part. */
+export function isTeamWide(t: TaskLike) {
+  return t.visibility === "team" && t.assignee_member_id === null;
+}
+
+/** Done from this viewer's point of view: closed, or my part of a team-wide task is done. */
+export function doneForMe(t: TaskLike, myMemberId: number | null) {
+  if (t.status === "done") return true;
+  return isTeamWide(t) && myMemberId !== null && (t.task_completions ?? []).some((c) => c.member_id === myMemberId);
 }
 
 /** Whether this viewer may tick the task (mirrors RLS; the database still decides). */

@@ -5,12 +5,12 @@ import { fullName, getLinks, getSessions, getTasks, getTeamContext, type Task } 
 import { isoDate } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { tally, type Mark } from "@/lib/attendance";
-import { bucketOf, byDue, canToggle, dueLabel, isMine } from "@/lib/tasks";
+import { bucketOf, byDue, doneForMe, isMine } from "@/lib/tasks";
 import { buttonClass } from "@/components/button-class";
 import { Section, TallyBar } from "@/components/section";
 import { StartRollCall } from "./start-roll-call";
-import { setTaskDone, startRollCall } from "./actions";
-import { TaskRow } from "./tasks/task-row";
+import { startRollCall } from "./actions";
+import { TaskItem, type TaskContext } from "./tasks/task-item";
 
 const t = strings.today;
 const a = strings.attendance;
@@ -101,35 +101,24 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
   }
 
   const myId = ctx.me?.id ?? null;
-  const names = new Map(ctx.roster.map((m) => [m.id, fullName(m)]));
-  const taskRow = (task: Task) => (
-    <TaskRow
-      key={`${task.id}-${task.status}`}
-      title={task.title}
-      notes={task.notes}
-      due={dueLabel(task, ctx.today)}
-      overdue={bucketOf(task, ctx.today) === "overdue"}
-      who={
-        task.visibility === "private"
-          ? ""
-          : task.assignee_member_id
-            ? names.get(task.assignee_member_id) ?? ""
-            : strings.tasks.everyone
-      }
-      isPrivate={task.visibility === "private"}
-      done={task.status === "done"}
-      canToggle={canToggle(task, myId, canCommand)}
-      toggle={setTaskDone.bind(null, teamId, task.id)}
-    />
-  );
+  const taskCtx: TaskContext = {
+    teamId,
+    today: ctx.today,
+    myId,
+    canCommand,
+    members: ctx.roster.map((m) => ({ id: m.id, name: fullName(m) })),
+  };
+  const taskRow = (task: Task) => <TaskItem key={task.id} task={task} ctx={taskCtx} />;
   const open = tasks.filter((x) => x.status === "open");
   const myDay = open
-    .filter((x) => isMine(x, myId) && ["overdue", "today"].includes(bucketOf(x, ctx.today)))
+    .filter((x) => isMine(x, myId) && !doneForMe(x, myId) && ["overdue", "today"].includes(bucketOf(x, ctx.today)))
     .sort(byDue);
   const newToday = tasks
     .filter((x) => x.visibility === "team" && isoDate(new Date(x.created_at)) === ctx.today)
     .sort(byDue);
-  const dueTomorrow = open.filter((x) => bucketOf(x, ctx.today) === "tomorrow" && isMine(x, myId)).sort(byDue);
+  const dueTomorrow = open
+    .filter((x) => bucketOf(x, ctx.today) === "tomorrow" && isMine(x, myId) && !doneForMe(x, myId))
+    .sort(byDue);
   const evening = israelHour() >= 17;
 
   const tasksLink = (

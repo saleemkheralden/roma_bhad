@@ -12,7 +12,7 @@ export type Assignment = Tables["role_assignments"]["Row"];
 export type Session = Tables["attendance_sessions"]["Row"];
 export type Entry = Tables["attendance_entries"]["Row"];
 export type LinkRow = Tables["links"]["Row"];
-export type Task = Tables["tasks"]["Row"];
+export type Task = Tables["tasks"]["Row"] & { task_completions: { member_id: number }[] };
 export type AttendanceStatus = "present" | "late" | "absent";
 
 export type Permissions = {
@@ -135,7 +135,7 @@ export async function getTasks(teamId: number) {
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("tasks")
-    .select("*")
+    .select("*, task_completions(member_id)")
     .eq("team_id", teamId)
     .or(`status.eq.open,done_at.gte.${weekAgo}`)
     .order("due_on", { ascending: true, nullsFirst: false })

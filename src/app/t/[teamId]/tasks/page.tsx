@@ -3,12 +3,12 @@ import Link from "next/link";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
 import { fullName, getTasks, getTeamContext, type Task } from "@/lib/data";
 import { strings } from "@/lib/strings";
-import { BUCKETS, bucketOf, byDue, canToggle, dueLabel, isMine } from "@/lib/tasks";
+import { BUCKETS, bucketOf, byDue, doneForMe, isMine } from "@/lib/tasks";
 import { ActionButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
-import { createTask, deleteTask, setTaskDone } from "../actions";
+import { createTask, deleteTask } from "../actions";
 import { NewTaskForm } from "./new-task-form";
-import { TaskRow } from "./task-row";
+import { TaskItem, type TaskContext } from "./task-item";
 
 const s = strings.tasks;
 type View = "mine" | "team" | "private";
@@ -26,29 +26,24 @@ async function Tasks({
   const [ctx, tasks] = await Promise.all([getTeamContext(teamId), getTasks(teamId)]);
   const canCommand = ctx.permissions.can_command;
   const myId = ctx.me?.id ?? null;
-  const names = new Map(ctx.roster.map((m) => [m.id, fullName(m)]));
 
   const inView = (t: Task) =>
     view === "team" ? t.visibility === "team" : view === "private" ? t.visibility === "private" : isMine(t, myId);
   const visible = tasks.filter(inView).sort(byDue);
-  const open = visible.filter((t) => t.status === "open");
-  const done = visible.filter((t) => t.status === "done");
+  // In "mine", a team-wide task counts as done once my part is done; elsewhere only when closed.
+  const isDone = (t: Task) => (view === "mine" ? doneForMe(t, myId) : t.status === "done");
+  const open = visible.filter((t) => !isDone(t));
+  const done = visible.filter(isDone);
   const deletable = tasks.filter((t) => (t.visibility === "private" ? true : canCommand));
 
-  const row = (t: Task) => (
-    <TaskRow
-      key={`${t.id}-${t.status}`}
-      title={t.title}
-      notes={t.notes}
-      due={dueLabel(t, ctx.today)}
-      overdue={bucketOf(t, ctx.today) === "overdue"}
-      who={t.visibility === "private" ? "" : t.assignee_member_id ? names.get(t.assignee_member_id) ?? "" : s.everyone}
-      isPrivate={t.visibility === "private"}
-      done={t.status === "done"}
-      canToggle={canToggle(t, myId, canCommand)}
-      toggle={setTaskDone.bind(null, teamId, t.id)}
-    />
-  );
+  const taskCtx: TaskContext = {
+    teamId,
+    today: ctx.today,
+    myId,
+    canCommand,
+    members: ctx.roster.map((m) => ({ id: m.id, name: fullName(m) })),
+  };
+  const row = (t: Task) => <TaskItem key={t.id} task={t} ctx={taskCtx} />;
 
   return (
     <>
