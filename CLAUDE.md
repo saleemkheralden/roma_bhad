@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 3 in progress: calendar embed done (Phases 1–2 done). **Production:** https://roma-bhad.vercel.app (Vercel project `roma_bhad`; the old team-hub-nine-cyan.vercel.app redirects there); Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Still to do online: Google OAuth credentials in Supabase; custom SMTP before turning email sign-in back on (`EMAIL_LOGIN=on`). Repo: `saleemkheralden/roma_bhad` (private), Vercel project `roma_bhad`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 3 in progress: calendar embed done (Phases 1–2 done). **Production:** https://roma-bhad.vercel.app (Vercel project `roma_bhad`, auto-deploys from GitHub `main`); Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Still to do online: Google OAuth credentials in Supabase; custom SMTP before turning email sign-in back on (`EMAIL_LOGIN=on`). Repo: `saleemkheralden/roma_bhad` (private), Vercel project `roma_bhad`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
