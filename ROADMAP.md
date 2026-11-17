@@ -113,7 +113,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Add Impeccable (dev dependency + project skills)
 - [x] Create the design context (`PRODUCT.md`, "Departure Board" direction in `.impeccable/surfaces/src-app.md`)
 - [x] `git init` + private GitHub repo + link to Vercel; first deploy (behind Vercel login)
-- [ ] Give the Vercel GitHub app access to the repo, so every push deploys
+- [x] Give the Vercel GitHub app access to the repo, so every push deploys
 - [x] Local Supabase + Phase 1 schema (`teams`, `team_members`, `team_roles`, `role_assignments`, `attendance_*`, `links`) with RLS and 25 pgTAP tests
 - [x] Create the hosted Supabase project (`roma`, Frankfurt) and push the migrations
 - [x] Sign-in with a 6-digit email code (works locally via Mailpit)
@@ -131,7 +131,8 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Links hub: add, remove and categorize links
 - [x] PWA manifest
 - [x] Real app icons (192/512 PNG + maskable + apple-touch), rendered by `scripts/make-icons.mjs`
-- [ ] Deploy to Vercel; pilot with your own team
+- [x] Deploy to Vercel (https://roma-bhad.vercel.app)
+- [ ] Pilot with your own team (after Phase 0 approval)
 
 ### Phase 2: Tasks
 - [x] `tasks` table and Row-Level Security policies (team vs. private), 20 pgTAP tests
