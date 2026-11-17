@@ -9,7 +9,7 @@
     "lint": "eslint",
     "db:types": "npx supabase gen types --lang typescript --local > src/lib/supabase/database.types.ts",
     "db:test": "npx supabase test db",
-    "test:unit": "node --no-warnings --import ./scripts/ts-resolve.mjs scripts/test-calendar.ts && node --no-warnings --import ./scripts/ts-resolve.mjs scripts/test-agenda.ts"
+    "test:unit": "node scripts/test-calendar.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

@@ -140,13 +140,13 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Views: mine / team / private, grouped by overdue, today, tomorrow, later; "my day" on Today
 - [x] Mark done (assignee or command); overdue group; done tasks of the last week collapsed
 - [x] Evening catch-up on Today: team tasks added today, due tomorrow (moves to the top after 17:00)
-- [x] Catch-up: tomorrow's calendar events (when the service account can read the calendar)
+- [ ] Catch-up: tomorrow's calendar events (needs Phase 3)
 - [x] Edit a task after creating it (text, notes, date/time, assignee; command for team tasks, owner for private)
 - [x] Team-wide tasks done per cadet: each cadet marks their part, progress and who's missing, command marks cadets without a phone and closes the task
 
 ### Phase 3: Integrations
 - [x] Settings: paste the team's Google Calendar (ID, share link, embed link or `<iframe>` code) → agenda embed on Today, up to 3 calendars
-- [x] Calendar API via a service account: Roma's own agenda on Today (works on any phone, calendar stays private); falls back to the embed until the calendar is shared with the service account
+- [ ] Calendar API: "today/tomorrow" list in "my day"
 - [ ] Google Cloud service account + Sheets API (read-only); the staff shares the sheet with the service account's email
 - [ ] Sheet viewer: pick a tab/range → mobile-friendly table, cached
 - [ ] Error states (sheet not shared, quota exceeded)
