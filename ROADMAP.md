@@ -84,6 +84,7 @@ Goal: one team uses it for a full week.
 
 ### Phase 2: Tasks (weeks 4–5)
 Team and private tasks, due dates, a "my day" view (my private tasks + team tasks assigned to me + today's events), and done/undone. Plus an **evening catch-up view**: what was added today and what's due tomorrow, for the cadets who only get their phones in the evening.
+Later additions: **checklists** inside a task, and **personal task views** (Kanban and more), where each cadet picks how to manage their own tasks.
 
 ### Phase 3: Integrations (weeks 6–7)
 An embedded Google Calendar (then a native "today" list from the Calendar API), a read-only Google Sheets view (for example the security-team list rendered as a clean table), and caching for weak reception.
@@ -92,6 +93,8 @@ An embedded Google Calendar (then a native "today" list from the Calendar API), 
 - **Name trainer**: photo/role/nickname → name flashcards and a quiz before your התנסות starts.
 - "Handover" notes from one role-holder to the next (written in the evening, read by tomorrow's holder).
 - Notifications: daytime push for role-holders only, plus an evening summary for everyone.
+- **Notice board** for role-holders: announcements the team catches up on in the evening.
+- **Polls** for collecting information: a role-holder sends a poll and gets a ready summary (counts, who hasn't answered).
 - (The basic role rotation moved into Phase 1.)
 
 ### Phase 5: Scale and polish (week 10+)
@@ -143,6 +146,8 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Catch-up: tomorrow's calendar events (needs Phase 3)
 - [x] Edit a task after creating it (text, notes, date/time, assignee; command for team tasks, owner for private)
 - [x] Team-wide tasks done per cadet: each cadet marks their part, progress and who's missing, command marks cadets without a phone and closes the task
+- [ ] Task checklists: break a task into steps that are ticked off, progress (3/5) on the card; RLS mirrors the parent task
+- [ ] Personal task views: each cadet picks how to manage their own tasks (Kanban board, list, by due date), saved per user; start from the focus-board project's Kanban code (`DankoWiki/focus-board`)
 
 ### Phase 3: Integrations
 - [x] Settings: paste the team's Google Calendar (ID, share link, embed link or `<iframe>` code) → agenda embed on Today, up to 3 calendars
@@ -156,6 +161,8 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Roll-call "practice mode": a photo or nickname is shown and you pick the name
 - [ ] Handover notes between role-holders
 - [ ] Web push for role-holders during the day; an evening summary for everyone
+- [ ] Notice board for role-holders: post, pin and expire announcements (members read, command posts); decide whether it also carries notes between role-holders
+- [ ] Polls: single/multiple choice and short text; members answer their own, command sees a summary and who hasn't answered; a reminder in the UI not to ask for ID numbers, medical details, locations or anything operational
 
 ### Phase 5: Scale
 - [ ] Company level: a company holds teams; company dashboard
