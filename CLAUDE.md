@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 3 in progress: calendar (embed + server-side read as Roma's Google account `roma.d.standard@gmail.com`) done; Sheets next (Phases 1–2 done). **Production:** https://roma-bhad.vercel.app (Vercel project `roma_bhad`, auto-deploys from GitHub `main`); Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Google sign-in works in production. Still to do online: custom SMTP before turning email sign-in back on (`EMAIL_LOGIN=on`). Repo: `saleemkheralden/roma_bhad` (private), Vercel project `roma_bhad`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 3 in progress: calendar (embed + server-side read as Roma's Google account `roma.d.standard@gmail.com`) done; Sheets next (Phases 1–2 done). **Production:** https://roma-bhad.vercel.app (Vercel project `roma_bhad`, auto-deploys from GitHub `main`); Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Sign-in is **Google only** in production; email codes exist only in local dev (`EMAIL_LOGIN=on`, ignored in production builds) for Mailpit and the smoke test. Repo: `saleemkheralden/roma_bhad` (private), Vercel project `roma_bhad`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
@@ -25,7 +25,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 ## Stack
 - **Frontend:** Next.js 16 (App Router, `src/` dir, `cacheComponents` on) + React 19 + TypeScript + Tailwind CSS 4, installable as a PWA (`src/app/manifest.ts`).
 - **Backend:** Supabase (Postgres, Auth, Storage, Row-Level Security).
-- **Auth:** Google sign-in through Supabase Auth.
+- **Auth:** Google sign-in through Supabase Auth (production). Email codes only in local development.
 - **Integrations:** Google Calendar (iframe embed first, then the API) and Google Sheets API (read-only, through a service account).
 - **Hosting:** Vercel Hobby (free) + Supabase Free.
   - Supabase Free pauses a project after 7 days with no activity. Keep a scheduled ping (GitHub Actions cron) once the app is live.
