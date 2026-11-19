@@ -75,3 +75,40 @@ export function canToggle(t: TaskLike, myMemberId: number | null, canCommand: bo
   if (t.visibility === "private") return true;
   return canCommand || (myMemberId !== null && t.assignee_member_id === myMemberId);
 }
+
+// Personal views (issue #1) ----------------------------------------------------
+
+export type TaskLayout = "list" | "board" | "days";
+export const LAYOUTS: TaskLayout[] = ["list", "board", "days"];
+export function asLayout(v: string | null | undefined): TaskLayout {
+  return v === "board" || v === "days" ? v : "list";
+}
+
+/** Board lanes, in reading order (right to left in RTL). Only "doing" is stored; "done" comes from the task. */
+export type Lane = "todo" | "doing" | "done";
+export const LANES: Lane[] = ["todo", "doing", "done"];
+export type Placement = { task_id: number; lane: string; position: number };
+
+/** Where a task sits on this viewer's board. */
+export function laneOf(t: TaskLike, myMemberId: number | null, placement: Placement | undefined): Lane {
+  if (doneForMe(t, myMemberId)) return "done";
+  return placement?.lane === "doing" ? "doing" : "todo";
+}
+
+/** Card order within a lane: placed cards by position, then the rest by due date. */
+export function byPlacement(placements: Map<number, Placement>) {
+  return (a: TaskLike, b: TaskLike) => {
+    const pa = placements.get(a.id)?.position;
+    const pb = placements.get(b.id)?.position;
+    if (pa !== undefined && pb !== undefined && pa !== pb) return pa - pb;
+    if (pa !== undefined && pb === undefined) return -1;
+    if (pa === undefined && pb !== undefined) return 1;
+    return byDue(a, b);
+  };
+}
+
+/** Day groups for the "by day" view: overdue, then each date, then undated. */
+export function dayKey(t: Pick<TaskLike, "due_on">, today: string): string {
+  if (!t.due_on) return "none";
+  return t.due_on < today ? "overdue" : t.due_on;
+}

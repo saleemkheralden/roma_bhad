@@ -49,6 +49,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - RPCs: `create_team`, `preview_team`, `join_team`, `regenerate_invite_code`. New tables need explicit `grant`s (Supabase no longer exposes them automatically).
 - `tasks` (Phase 2): `visibility` team|private (immutable), `assignee_member_id` (null = whole team), `due_on` + optional `due_time`, `status` open|done. Trigger `private.guard_tasks` forces `owner_id` to the caller on private tasks, sets `done_at`/`done_by`, and lets a non-command assignee change only `status`. Team-wide tasks (no assignee) are closed by command only; each cadet's part lives in `task_completions` (own row, or anyone's for command; only while the task is open).
 - `integrations` (Phase 3): `kind` gcal|gsheet + `external_id` (only an identifier; events and sheet contents stay in Google). Members read, managers add/remove, max 3 calendars. `src/lib/calendar.ts` parses pasted IDs/links/iframes and builds the embed URL.
+- Personal task views (issue #1): `user_settings` (my `task_layout`: list|board|days) and `task_lanes` (my board lane `todo|doing` + `position` per task). Both own-row only; a lane can only be set on a task the caller can see. "Done" is never a lane: it comes from `tasks.status` or my `task_completions` row. The "team" tab always stays a list.
 - Planned: `companies`. See `ROADMAP.md` §2.
 
 ## Gotchas

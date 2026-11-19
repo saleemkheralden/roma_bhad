@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
 import { parseCalendarIds } from "@/lib/calendar";
+import { LANES, LAYOUTS, type Lane, type TaskLayout } from "@/lib/tasks";
 
 // Permissions are enforced by RLS and triggers in the database; these
 // functions only shape input and translate errors into Hebrew.
@@ -270,6 +271,59 @@ export async function setCompletion(teamId: number, taskId: number, memberId: nu
       .eq("task_id", taskId)
       .eq("member_id", memberId),
   );
+}
+
+// Personal task views (issue #1) ----------------------------------------------
+
+/** Save my task layout. Personal: it changes nothing for anyone else. */
+export async function setTaskLayout(layout: TaskLayout): Promise<ActionResult> {
+  if (!LAYOUTS.includes(layout)) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ task_layout: layout, updated_at: new Date().toISOString() });
+  if (error) return fail(error);
+  return { ok: true };
+}
+
+/**
+ * Move a card on my board. `order` is the target lane's task ids after the move.
+ * "done" goes through the task itself (status, or my part of a team-wide task),
+ * so RLS and the tasks trigger still decide; lanes and order are personal only.
+ */
+export async function moveTask(
+  teamId: number,
+  taskId: number,
+  move: { from: Lane; to: Lane; teamWide: boolean; myMemberId: number | null; order: number[] },
+): Promise<ActionResult> {
+  const { from, to, teamWide, myMemberId } = move;
+  if (!LANES.includes(from) || !LANES.includes(to)) return { error: strings.common.genericError };
+  const order = move.order.filter(Number.isInteger).slice(0, 300);
+  const supabase = await createClient();
+
+  if (from !== to && (from === "done" || to === "done")) {
+    const done = to === "done";
+    const result =
+      teamWide && myMemberId !== null
+        ? await setCompletion(teamId, taskId, myMemberId, done)
+        : await setTaskDone(teamId, taskId, done);
+    if (result?.error) return result;
+  }
+
+  if (to !== "done") {
+    const now = new Date().toISOString();
+    const rows = (order.includes(taskId) ? order : [...order, taskId]).map((id, position) => ({
+      task_id: id,
+      team_id: teamId,
+      lane: to,
+      position,
+      updated_at: now,
+    }));
+    const { error } = await supabase.from("task_lanes").upsert(rows);
+    if (error) return fail(error);
+  }
+  refresh();
+  return { ok: true };
 }
 
 export async function deleteTask(teamId: number, taskId: number) {

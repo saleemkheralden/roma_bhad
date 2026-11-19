@@ -143,6 +143,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Catch-up: tomorrow's calendar events (needs Phase 3)
 - [x] Edit a task after creating it (text, notes, date/time, assignee; command for team tasks, owner for private)
 - [x] Team-wide tasks done per cadet: each cadet marks their part, progress and who's missing, command marks cadets without a phone and closes the task
+- [x] Personal task views (issue #1): each cadet picks list, Kanban board (to do / in progress / done, long-press drag + one-thumb arrow buttons, drag engine ported from Focus Board) or by-day; the layout, "in progress" and card order are per user only (`user_settings`, `task_lanes`), 16 pgTAP tests
 
 ### Phase 3: Integrations
 - [x] Settings: paste the team's Google Calendar (ID, share link, embed link or `<iframe>` code) → agenda embed on Today, up to 3 calendars

@@ -3,6 +3,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createClient, getUserId } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
+import { asLayout } from "@/lib/tasks";
 
 type Tables = Database["public"]["Tables"];
 export type Team = Tables["teams"]["Row"];
@@ -143,6 +144,22 @@ export async function getTasks(teamId: number) {
     .limit(300);
   if (error) throw error;
   return data ?? [];
+}
+
+/** My board placements (lane + order) for this team's tasks. Private to me by RLS. */
+export async function getTaskLanes(teamId: number) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("task_lanes").select("task_id, lane, position").eq("team_id", teamId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** My chosen task layout ("list" when I never picked one). */
+export async function getTaskLayout() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("user_settings").select("task_layout").maybeSingle();
+  if (error) throw error;
+  return asLayout(data?.task_layout);
 }
 
 export async function getCalendars(teamId: number) {
