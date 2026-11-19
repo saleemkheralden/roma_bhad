@@ -23,6 +23,7 @@ export function TeamWideTaskRow({
   setCompletion,
   closeTask,
   doing = false,
+  checklist,
   editor,
 }: {
   title: string;
@@ -36,6 +37,7 @@ export function TeamWideTaskRow({
   setCompletion: (memberId: number, done: boolean) => Promise<ActionResult>;
   closeTask: (done: boolean) => Promise<ActionResult>;
   doing?: boolean;
+  checklist?: ReactNode;
   editor?: ReactNode;
 }) {
   const [done, setDone] = useState(() => new Set(initialDone));
@@ -106,7 +108,10 @@ export function TeamWideTaskRow({
             <span className="font-bold text-present-ink">{s.progress(finished, members.length)}</span>
             {doing && !mine ? <span className="font-bold text-now-ink">{s.doingTag}</span> : null}
           </p>
-          {editor}
+          <div className="flex flex-wrap items-center gap-x-4">
+            {checklist}
+            {editor}
+          </div>
         </div>
         <button
           type="button"

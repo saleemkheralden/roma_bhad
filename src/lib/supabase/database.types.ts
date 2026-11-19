@@ -141,6 +141,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"task_checklist_items": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"done": boolean,"done_at": string | null,"done_by": string | null,"id": number,"position": number,"task_id": number,"team_id": number,"text": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"done"?: boolean,"done_at"?: string | null,"done_by"?: string | null,"id"?: never,"position"?: number,"task_id": number,"team_id": number,"text": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"done"?: boolean,"done_at"?: string | null,"done_by"?: string | null,"id"?: never,"position"?: number,"task_id"?: number,"team_id"?: number,"text"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "task_checklist_items_task_id_team_id_fkey"
+      columns: ["task_id","team_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","team_id"]
+    }
+                  ]
                 },"task_completions": {
                   Row: {
                     "done_at": string,"done_by": string | null,"member_id": number,"task_id": number,"team_id": number

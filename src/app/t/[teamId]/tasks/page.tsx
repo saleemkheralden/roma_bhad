@@ -118,6 +118,9 @@ async function Tasks({
               taskCtx.members.length,
             )
           : "",
+        steps: t.task_checklist_items.length
+          ? s.steps(t.task_checklist_items.filter((x) => x.done).length, t.task_checklist_items.length)
+          : "",
         teamWide: wide,
         // Team-wide: my own part, while the task is open. Otherwise: who may tick it.
         canFinish: wide ? myId !== null && t.status === "open" : canToggle(t, myId, canCommand),

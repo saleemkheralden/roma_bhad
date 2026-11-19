@@ -1,8 +1,16 @@
 import type { Task } from "@/lib/data";
 import { strings } from "@/lib/strings";
-import { bucketOf, canToggle, dueLabel, isTeamWide } from "@/lib/tasks";
-import { setCompletion, setTaskDone, updateTask } from "../actions";
+import { bucketOf, canToggle, checklistAccess, dueLabel, isTeamWide, sortSteps } from "@/lib/tasks";
+import {
+  addChecklistSteps,
+  removeChecklistStep,
+  setChecklistStepDone,
+  setCompletion,
+  setTaskDone,
+  updateTask,
+} from "../actions";
 import { EditTask } from "./edit-task";
+import { TaskChecklist } from "./task-checklist";
 import { TaskRow } from "./task-row";
 import { TeamWideTaskRow } from "./team-wide-task-row";
 
@@ -40,6 +48,17 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
       members={ctx.members}
     />
   ) : null;
+  const checklist = (
+    <TaskChecklist
+      title={task.title}
+      steps={sortSteps(task.task_checklist_items ?? [])}
+      access={checklistAccess(task, ctx.myId, ctx.canCommand)}
+      taskOpen={task.status === "open"}
+      setDone={setChecklistStepDone.bind(null, ctx.teamId)}
+      remove={removeChecklistStep.bind(null, ctx.teamId)}
+      add={addChecklistSteps.bind(null, ctx.teamId, task.id)}
+    />
+  );
 
   if (isTeamWide(task) && task.status === "open") {
     return (
@@ -56,6 +75,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
         setCompletion={setCompletion.bind(null, ctx.teamId, task.id)}
         closeTask={setTaskDone.bind(null, ctx.teamId, task.id)}
         doing={doing}
+        checklist={checklist}
         editor={editor}
       />
     );
@@ -80,6 +100,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
       canToggle={canToggle(task, ctx.myId, ctx.canCommand)}
       toggle={setTaskDone.bind(null, ctx.teamId, task.id)}
       doing={doing}
+      checklist={checklist}
       editor={editor}
     />
   );

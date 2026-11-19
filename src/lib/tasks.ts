@@ -12,7 +12,11 @@ export type TaskLike = {
   owner_id: string | null;
   created_at: string;
   task_completions?: { member_id: number }[];
+  task_checklist_items?: { id: number; position: number; done: boolean }[];
 };
+
+/** What this viewer may do with a task's checklist: add/remove steps, only tick them, or just read. */
+export type ChecklistAccess = "edit" | "tick" | "read";
 
 export type Bucket = "overdue" | "today" | "tomorrow" | "later" | "none";
 export const BUCKETS: Bucket[] = ["overdue", "today", "tomorrow", "later", "none"];
@@ -111,4 +115,28 @@ export function byPlacement(placements: Map<number, Placement>) {
 export function dayKey(t: Pick<TaskLike, "due_on">, today: string): string {
   if (!t.due_on) return "none";
   return t.due_on < today ? "overdue" : t.due_on;
+}
+
+/**
+ * Mirrors private.checklist_access (the database still decides): the owner edits a private
+ * task's steps, command edits a team task's, and the assignee may tick theirs. Closed: read-only.
+ */
+export function checklistAccess(t: TaskLike, myMemberId: number | null, canCommand: boolean): ChecklistAccess {
+  if (t.status !== "open") return "read";
+  if (t.visibility === "private" || canCommand) return "edit";
+  return myMemberId !== null && t.assignee_member_id === myMemberId ? "tick" : "read";
+}
+
+/** Steps in their saved order (position, then creation order). */
+export function sortSteps<T extends { id: number; position: number }>(items: T[]) {
+  return [...items].sort((a, b) => a.position - b.position || a.id - b.id);
+}
+
+/** "Step one\n2. step two\n- step three" -> ["Step one", "step two", "step three"]: max 20, 120 chars each. */
+export function parseSteps(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.replace(/^\s*(?:\d+[.)]|[-*•▪◦]|\[[ xX]?\])\s*/, "").trim().slice(0, 120))
+    .filter(Boolean)
+    .slice(0, 20);
 }
