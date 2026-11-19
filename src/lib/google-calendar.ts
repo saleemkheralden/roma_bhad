@@ -1,23 +1,26 @@
 import "server-only";
 import { cacheLife } from "next/cache";
 import { normalizeEvents, type CalEvent, type GoogleItem } from "./agenda";
-import { signJwt, type Creds } from "./jwt";
 
-// Reads team calendars with a Google service account (the calendar is shared with
-// its email as "See all event details"). Server-only: the key never reaches the browser.
-// Only id, title, status and times are requested: never location or description.
+// Reads team calendars as Roma's own Google account (e.g. the roma Gmail account), which the
+// calendar owner shares calendars with ("See all event details"). The account authorised Roma
+// once (scripts/connect-google-calendar.mjs, read-only scope); the refresh token lives only in
+// server env. Only id, title, status and times are requested: never location or description.
 
 const TOKEN_URL = "https://oauth2.googleapis.com/token";
 
-export function serviceAccount(): Creds | null {
-  const email = process.env.GOOGLE_SA_EMAIL?.trim();
-  const key = process.env.GOOGLE_SA_KEY?.replace(/\\n/g, "\n").trim();
-  return email && key ? { email, key } : null;
+type Creds = { clientId: string; clientSecret: string; refreshToken: string };
+
+function credentials(): Creds | null {
+  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID?.trim();
+  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
+  const refreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN?.trim();
+  return clientId && clientSecret && refreshToken ? { clientId, clientSecret, refreshToken } : null;
 }
 
 /** The address calendars must be shared with (shown in the team settings). */
-export function serviceAccountEmail() {
-  return serviceAccount()?.email ?? null;
+export function calendarAccountEmail() {
+  return credentials() ? process.env.GOOGLE_CALENDAR_ACCOUNT?.trim() || null : null;
 }
 
 async function accessToken(creds: Creds) {
@@ -25,8 +28,10 @@ async function accessToken(creds: Creds) {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams({
-      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
-      assertion: signJwt(creds),
+      grant_type: "refresh_token",
+      client_id: creds.clientId,
+      client_secret: creds.clientSecret,
+      refresh_token: creds.refreshToken,
     }),
   });
   if (!res.ok) throw new Error(`token ${res.status}`);
@@ -46,7 +51,7 @@ export async function getCalendarEvents(ids: string[], fromDay: string, days: nu
   "use cache";
   cacheLife("minutes");
 
-  const creds = serviceAccount();
+  const creds = credentials();
   if (!creds) return { status: "not-configured" };
   if (ids.length === 0) return { status: "ok", events: [], notShared: [] };
 

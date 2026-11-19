@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { fullName, getCalendars, getTeamContext } from "@/lib/data";
-import { serviceAccountEmail } from "@/lib/google-calendar";
+import { calendarAccountEmail } from "@/lib/google-calendar";
 import { shortDate, weekdayOf } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section } from "@/components/section";
@@ -250,13 +250,13 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
       </Section>
 
       <Section id="calendar" title={c.settings}>
-        {calendars.length > 0 && serviceAccountEmail() ? (
+        {calendars.length > 0 && calendarAccountEmail() ? (
           <div className="mb-3 rounded-[var(--radius-control)] border border-rule bg-paper p-3">
             <p className="text-sm">{c.shareWith}</p>
-            <p dir="ltr" className="mt-1 break-all text-start text-sm font-bold">{serviceAccountEmail()}</p>
+            <p dir="ltr" className="mt-1 break-all text-start text-sm font-bold">{calendarAccountEmail()}</p>
             <p className="mt-1 text-xs text-ink-2">{c.shareSteps}</p>
             <div className="mt-2">
-              <CopyButton text={serviceAccountEmail() ?? ""}>{c.copyEmail}</CopyButton>
+              <CopyButton text={calendarAccountEmail() ?? ""}>{c.copyEmail}</CopyButton>
             </div>
           </div>
         ) : null}

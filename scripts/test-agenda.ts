@@ -1,8 +1,6 @@
-// Unit checks for calendar events and the service-account JWT. Run: node scripts/test-agenda.ts
+// Unit checks for calendar events. Run: npm run test:unit
 import assert from "node:assert/strict";
-import { createVerify, generateKeyPairSync } from "node:crypto";
 import { groupByDay, normalizeEvents } from "../src/lib/agenda.ts";
-import { signJwt } from "../src/lib/jwt.ts";
 
 let checks = 0;
 const ok = (fn: () => void) => {
@@ -51,15 +49,4 @@ const groups = groupByDay(
 ok(() => assert.deepEqual(groups.map((g) => g.day), ["2026-11-17", "2026-11-18"]));
 ok(() => assert.deepEqual(groups[0].events.map((e) => e.title), ["all day", "early", "late"]));
 
-// JWT: header/claims shape and a signature that verifies with the public key.
-const { privateKey, publicKey } = generateKeyPairSync("rsa", { modulusLength: 2048 });
-const pem = privateKey.export({ type: "pkcs8", format: "pem" }).toString();
-const jwt = signJwt({ email: "roma@test.iam.gserviceaccount.com", key: pem }, 1_000_000);
-const [h, c, sig] = jwt.split(".");
-const claims = JSON.parse(Buffer.from(c, "base64url").toString());
-ok(() => assert.deepEqual(JSON.parse(Buffer.from(h, "base64url").toString()), { alg: "RS256", typ: "JWT" }));
-ok(() => assert.equal(claims.scope, "https://www.googleapis.com/auth/calendar.readonly"));
-ok(() => assert.equal(claims.exp - claims.iat, 3600));
-ok(() => assert.ok(createVerify("RSA-SHA256").update(`${h}.${c}`).verify(publicKey, Buffer.from(sig, "base64url"))));
-
-console.log(`agenda + jwt: ${checks} checks passed`);
+console.log(`agenda: ${checks} checks passed`);
