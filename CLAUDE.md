@@ -54,6 +54,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - Planned: `companies`. See `ROADMAP.md` §2.
 
 ## Gotchas
+- Roll-call writes go through `src/lib/offline-queue.ts` (localStorage, latest mark per cadet, sent in order by `flush`). Don't write `attendance_entries` directly from the roll-call screen, or a late flush can overwrite a newer mark.
 - Next.js 16 `cacheComponents`: per-user data goes inside `<Suspense>`; the server Supabase client calls `connection()` so it always renders at request time.
 - Recently visited routes stay mounted but hidden (`<Activity>`), so tests must scope selectors to the visible page.
 - Tailwind classes don't override each other by order: size/padding/colour live only in `button-class.ts` variants; don't pass a competing `px-*`/`h-*`/`text-*`.

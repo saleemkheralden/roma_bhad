@@ -179,6 +179,23 @@ try {
   if (!count.replace(/\s/g, "").startsWith("11/13")) fail(`count after reload is ${count}`);
   step("roll call persisted after reload");
 
+  // Offline: marks are kept on the phone and sent when reception returns.
+  await ctxA.setOffline(true);
+  await cell("רון").click(); // present -> late
+  await a.getByText(/אין קליטה: סימון אחד שמור בטלפון/).waitFor();
+  if (!(await a.getByRole("button", { name: /^רון .*: מאחר/ }).count())) fail("offline mark should show right away");
+  await ctxA.setOffline(false);
+  await a.evaluate(() => window.dispatchEvent(new Event("online")));
+  await a.getByText("החיבור חזר, כל הסימונים נשלחו ✓").waitFor({ timeout: 20_000 });
+  await a.reload();
+  await a.getByRole("button", { name: /^רון .*: מאחר/ }).waitFor();
+  // Back to present (late -> absent -> unmarked -> present), online.
+  for (let i = 0; i < 3; i++) await cell("רון").click();
+  await a.waitForTimeout(1200);
+  await a.reload();
+  await a.getByRole("button", { name: /^רון .*: נוכח/ }).waitFor();
+  step("offline roll call: mark kept on the phone, sent when back online, survives reload");
+
   // ---- A: links -----------------------------------------------------------
   await a.goto(`${BASE}/t/${teamId}/links`);
   await a.getByLabel("שם").fill("יומן הצוות");
