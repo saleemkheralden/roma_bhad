@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
 import { parseCalendarIds } from "@/lib/calendar";
+import { calendarAccountEmail, probeCalendar } from "@/lib/google-calendar";
 
 // Permissions are enforced by RLS and triggers in the database; these
 // functions only shape input and translate errors into Hebrew.
@@ -281,10 +282,17 @@ export async function deleteTask(teamId: number, taskId: number) {
 export async function addCalendar(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
   const ids = parseCalendarIds(String(formData.get("calendar") ?? ""));
   if (ids.length === 0) return { error: strings.calendar.notFound };
-  const label = text(formData, "label").slice(0, 60);
+  const typedLabel = text(formData, "label").slice(0, 60);
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
+  let notShared = 0;
+  let configured = false;
   for (const id of ids) {
+    // Check access first: it tells us whether Roma can read it, and its name for the label.
+    const access = await probeCalendar(id);
+    if (access.status !== "not-configured") configured = true;
+    if (access.status === "not-shared" || access.status === "error") notShared++;
+    const label = typedLabel || (access.status === "ok" ? access.name : "");
     const { error } = await supabase
       .from("integrations")
       .insert({ team_id: teamId, kind: "gcal", external_id: id, label, created_by: claims?.claims?.sub });
@@ -293,7 +301,9 @@ export async function addCalendar(teamId: number, _p: ActionResult, formData: Fo
     if (error) return fail(error);
   }
   refresh();
-  return { ok: true };
+  if (!configured) return { ok: true, message: strings.calendar.connectedEmbed };
+  if (notShared > 0) return { ok: true, warning: strings.calendar.savedNotShared(calendarAccountEmail() ?? "") };
+  return { ok: true, message: strings.calendar.connectedOk };
 }
 
 export async function removeIntegration(teamId: number, integrationId: number) {

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCalendarEvents, serviceAccountEmail } from "@/lib/google-calendar";
+import { calendarAccountEmail, getCalendarEvents } from "@/lib/google-calendar";
 import { strings } from "@/lib/strings";
 import { Agenda } from "./agenda";
 import { CalendarEmbed } from "./calendar-embed";
@@ -7,7 +7,7 @@ import { CalendarEmbed } from "./calendar-embed";
 const c = strings.calendar;
 
 /**
- * The team's calendar: read by Roma's service account when it's shared with it (works on
+ * The team's calendar: read by Roma's Google account when it's shared with it (works on
  * every phone), otherwise the Google embed (needs the viewer's own Google access + cookies).
  */
 export async function TeamCalendar({
@@ -37,7 +37,7 @@ export async function TeamCalendar({
   return (
     <>
       <CalendarEmbed ids={ids} />
-      {canManage && serviceAccountEmail() ? <ShareHint teamId={teamId} /> : null}
+      {canManage && calendarAccountEmail() ? <ShareHint teamId={teamId} /> : null}
     </>
   );
 }

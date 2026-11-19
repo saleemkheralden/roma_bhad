@@ -107,7 +107,7 @@ export function ErrorText({ children }: { children: ReactNode }) {
   );
 }
 
-export type ActionResult = { error?: string; ok?: boolean; message?: string } | null;
+export type ActionResult = { error?: string; ok?: boolean; message?: string; warning?: string } | null;
 export type FormAction = (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
 
 /** A <form> bound to a server function, showing its error and resetting on success. */
@@ -128,6 +128,11 @@ export function ActionForm({
       {state?.message ? (
         <p role="status" className="text-sm font-bold text-present-ink">
           {state.message}
+        </p>
+      ) : null}
+      {state?.warning ? (
+        <p role="status" className="rounded-[var(--radius-cell)] bg-now-wash px-3 py-2 text-sm font-medium text-now-ink">
+          {state.warning}
         </p>
       ) : null}
     </form>
