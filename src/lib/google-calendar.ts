@@ -108,7 +108,7 @@ export async function getCalendarEvents(ids: string[], fromDay: string, days: nu
         timeMax,
         singleEvents: "true",
         orderBy: "startTime",
-        maxResults: "100",
+        maxResults: "250",
         timeZone: "Asia/Jerusalem",
         fields: "items(id,summary,status,start,end)",
       });
