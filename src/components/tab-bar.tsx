@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { CalendarCheck, ClipboardCheck, Link2, ListChecks, Users } from "lucide-react";
+import { CalendarCheck, ClipboardCheck, Link2, ListChecks, Megaphone, Users } from "lucide-react";
 import { strings } from "@/lib/strings";
 
 const t = strings.tabs;
@@ -12,6 +12,7 @@ export function TabBar({ teamId }: { teamId: number }) {
   const base = `/t/${teamId}`;
   const tabs = [
     { href: base, label: t.today, icon: CalendarCheck, active: path === base },
+    { href: `${base}/notices`, label: t.notices, icon: Megaphone, active: path.startsWith(`${base}/notices`) },
     { href: `${base}/tasks`, label: t.tasks, icon: ListChecks, active: path.startsWith(`${base}/tasks`) },
     { href: `${base}/attendance`, label: t.attendance, icon: ClipboardCheck, active: path.startsWith(`${base}/attendance`) },
     { href: `${base}/team`, label: t.team, icon: Users, active: path.startsWith(`${base}/team`) },
