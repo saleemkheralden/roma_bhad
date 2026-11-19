@@ -19,6 +19,8 @@ export type BoardCard = {
   isPrivate: boolean;
   /** "3/12 סיימו" on team-wide tasks. */
   progress: string;
+  /** "2/4 שלבים" when the task has a checklist. */
+  steps: string;
   teamWide: boolean;
   /** I may mark it done / open again (mirrors RLS; the database still decides). */
   canFinish: boolean;
@@ -216,6 +218,7 @@ function Card({
           ) : null}
           {card.who ? <span>{card.who}</span> : null}
           {card.progress ? <span className="font-bold text-present-ink">{card.progress}</span> : null}
+          {card.steps ? <span className="font-bold text-ink">{card.steps}</span> : null}
           {card.isPrivate ? <span className="font-bold text-ink">{s.privateTag}</span> : null}
         </p>
       </div>

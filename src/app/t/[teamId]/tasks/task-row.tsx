@@ -18,6 +18,7 @@ export function TaskRow({
   canToggle,
   toggle,
   doing = false,
+  checklist,
   editor,
 }: {
   title: string;
@@ -30,6 +31,7 @@ export function TaskRow({
   canToggle: boolean;
   toggle: (done: boolean) => Promise<ActionResult>;
   doing?: boolean;
+  checklist?: ReactNode;
   editor?: ReactNode;
 }) {
   const [done, setDone] = useState(initialDone);
@@ -86,7 +88,10 @@ export function TaskRow({
             {error}
           </p>
         ) : null}
-        {editor}
+        <div className="flex flex-wrap items-center gap-x-4">
+          {checklist}
+          {editor}
+        </div>
       </div>
     </li>
   );

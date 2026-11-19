@@ -14,7 +14,11 @@ export type Session = Tables["attendance_sessions"]["Row"];
 export type Entry = Tables["attendance_entries"]["Row"];
 export type LinkRow = Tables["links"]["Row"];
 export type Integration = Tables["integrations"]["Row"];
-export type Task = Tables["tasks"]["Row"] & { task_completions: { member_id: number }[] };
+export type ChecklistItem = Pick<Tables["task_checklist_items"]["Row"], "id" | "text" | "position" | "done">;
+export type Task = Tables["tasks"]["Row"] & {
+  task_completions: { member_id: number }[];
+  task_checklist_items: ChecklistItem[];
+};
 export type AttendanceStatus = "present" | "late" | "absent";
 
 export type Permissions = {
@@ -137,7 +141,7 @@ export async function getTasks(teamId: number) {
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("tasks")
-    .select("*, task_completions(member_id)")
+    .select("*, task_completions(member_id), task_checklist_items(id, text, position, done)")
     .eq("team_id", teamId)
     .or(`status.eq.open,done_at.gte.${weekAgo}`)
     .order("due_on", { ascending: true, nullsFirst: false })

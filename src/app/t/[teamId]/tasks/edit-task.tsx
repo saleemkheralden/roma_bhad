@@ -50,7 +50,7 @@ export function EditTask({
   }
 
   return (
-    <form action={formAction} className="mt-2 flex flex-col gap-2 rounded-[var(--radius-control)] bg-paper p-3">
+    <form action={formAction} className="mt-2 flex basis-full flex-col gap-2 rounded-[var(--radius-control)] bg-paper p-3">
       <Field label={s.titleField} name="title" defaultValue={title} required maxLength={120} hint={s.titleHint} />
       {isTeam ? (
         <SelectField label={s.assignee} name="assignee_member_id" defaultValue={assignee ? String(assignee) : ""}>
