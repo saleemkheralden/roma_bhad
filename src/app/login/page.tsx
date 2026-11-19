@@ -15,8 +15,8 @@ export default function LoginPage() {
       <section className="mx-auto w-full max-w-md flex-1 px-4 py-8">
         <h1 className="mb-6 text-2xl font-extrabold">{strings.login.title}</h1>
         <Suspense>
-          {/* Email sign-in sends mail through Supabase: off unless EMAIL_LOGIN=on (needs custom SMTP online). */}
-          <LoginForm emailEnabled={process.env.EMAIL_LOGIN === "on"} />
+          {/* Production is Google-only. Email codes exist only in local dev (Mailpit + smoke test). */}
+          <LoginForm emailEnabled={process.env.NODE_ENV !== "production" && process.env.EMAIL_LOGIN === "on"} />
         </Suspense>
         <p className="mt-10 text-sm">
           <Link href="/privacy" className="text-ink-2 underline">
