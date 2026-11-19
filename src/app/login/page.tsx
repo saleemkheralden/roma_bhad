@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { strings } from "@/lib/strings";
 import { LoginForm } from "./login-form";
 
@@ -17,6 +18,11 @@ export default function LoginPage() {
           {/* Email sign-in sends mail through Supabase: off unless EMAIL_LOGIN=on (needs custom SMTP online). */}
           <LoginForm emailEnabled={process.env.EMAIL_LOGIN === "on"} />
         </Suspense>
+        <p className="mt-10 text-sm">
+          <Link href="/privacy" className="text-ink-2 underline">
+            מדיניות פרטיות
+          </Link>
+        </p>
       </section>
     </main>
   );
