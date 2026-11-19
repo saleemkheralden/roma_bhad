@@ -199,21 +199,31 @@ try {
   await a.getByText(/לא מצאנו מזהה יומן/).waitFor();
   const snippet = `<iframe src="https://calendar.google.com/calendar/embed?src=${encodeURIComponent(holidays)}&amp;ctz=Asia%2FJerusalem" style="border: 0" width="800" height="600"></iframe>`;
   await calForm.getByLabel("יומן Google").fill(snippet);
-  await calForm.getByLabel("שם (לא חובה)").fill("חגים");
+  await calForm.getByLabel(/^שם \(לא חובה/).fill("חגים");
   await calForm.getByRole("button", { name: "חיבור היומן" }).click();
   await a.locator("#calendar").getByText(holidays).first().waitFor();
-  step("calendar connected from a pasted <iframe> snippet (bad input rejected)");
+  // With Roma's Google account connected (.env.local), Roma reads the calendar itself.
+  const apiMode = (await a.locator("#calendar").getByText("נקרא ✓").count()) > 0;
+  step(`calendar connected from a pasted <iframe> snippet (bad input rejected; ${apiMode ? "read by Roma's account" : "embed mode"})`);
 
   await a.goto(`${BASE}/t/${teamId}`);
-  const frame = a.locator('iframe[title="יומן הצוות"]');
-  await frame.waitFor();
-  const frameSrc = new URL(await frame.getAttribute("src"));
-  if (!frameSrc.searchParams.getAll("src").includes(holidays)) fail(`embed src missing the calendar: ${frameSrc}`);
-  if (frameSrc.searchParams.get("ctz") !== "Asia/Jerusalem") fail("embed not in Israel time");
-  await frame.scrollIntoViewIfNeeded();
-  await a.waitForTimeout(4000); // let Google render the agenda
-  await a.screenshot({ path: `${OUT}/today-calendar.png`, fullPage: true });
-  step("Today embeds the calendar (agenda, Israel time)");
+  await a.getByRole("heading", { name: "יומן", exact: true }).waitFor();
+  if (apiMode) {
+    if (await a.locator('iframe[title="יומן הצוות"]').count()) fail("API mode should not use the embed");
+    await a.getByText(/אין אירועים בימים הקרובים|כל היום|היום|מחר/).first().waitFor();
+    await a.screenshot({ path: `${OUT}/today-calendar.png`, fullPage: true });
+    step("Today shows the calendar as Roma's own agenda (no iframe)");
+  } else {
+    const frame = a.locator('iframe[title="יומן הצוות"]');
+    await frame.waitFor();
+    const frameSrc = new URL(await frame.getAttribute("src"));
+    if (!frameSrc.searchParams.getAll("src").includes(holidays)) fail(`embed src missing the calendar: ${frameSrc}`);
+    if (frameSrc.searchParams.get("ctz") !== "Asia/Jerusalem") fail("embed not in Israel time");
+    await frame.scrollIntoViewIfNeeded();
+    await a.waitForTimeout(4000); // let Google render the agenda
+    await a.screenshot({ path: `${OUT}/today-calendar.png`, fullPage: true });
+    step("Today embeds the calendar (agenda, Israel time)");
+  }
 
   // ---- A: tasks ---------------------------------------------------------
   const todayIso = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
@@ -296,7 +306,7 @@ try {
 
   // ---- B: sees the calendar, cannot connect one ----------------------------
   await b.goto(`${BASE}/t/${teamId}`);
-  await b.locator('iframe[title="יומן הצוות"]').waitFor();
+  await b.getByRole("heading", { name: "יומן", exact: true }).waitFor();
   await b.goto(`${BASE}/t/${teamId}/team`);
   await b.getByText("יומן הצוות").first().waitFor();
   if (await b.locator("summary", { hasText: "חיבור היומן" }).count()) fail("B can connect a calendar");
