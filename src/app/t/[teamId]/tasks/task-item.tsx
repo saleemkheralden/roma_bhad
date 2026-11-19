@@ -12,6 +12,8 @@ export type TaskContext = {
   myId: number | null;
   canCommand: boolean;
   members: { id: number; name: string }[];
+  /** Tasks I keep "in progress" on my personal board. */
+  doingIds?: number[];
 };
 
 /** One task in a list: a per-cadet row for open team-wide tasks, a plain row otherwise. */
@@ -22,6 +24,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
   // Remount when the task opens/closes; completions resync inside the row without remounting.
   const key = `${task.id}-${task.status}`;
   const isTeam = task.visibility === "team";
+  const doing = (ctx.doingIds ?? []).includes(task.id);
   // Mirrors RLS: command edits team tasks; private tasks are only ever visible to their owner.
   const canEdit = task.status === "open" && (isTeam ? ctx.canCommand : true);
   const editor = canEdit ? (
@@ -52,6 +55,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
         canCommand={ctx.canCommand}
         setCompletion={setCompletion.bind(null, ctx.teamId, task.id)}
         closeTask={setTaskDone.bind(null, ctx.teamId, task.id)}
+        doing={doing}
         editor={editor}
       />
     );
@@ -75,6 +79,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
       done={task.status === "done"}
       canToggle={canToggle(task, ctx.myId, ctx.canCommand)}
       toggle={setTaskDone.bind(null, ctx.teamId, task.id)}
+      doing={doing}
       editor={editor}
     />
   );

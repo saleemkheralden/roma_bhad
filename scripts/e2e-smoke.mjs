@@ -249,6 +249,22 @@ try {
   await a.screenshot({ path: `${OUT}/tasks.png`, fullPage: true });
   step("A created two team tasks and a private one");
 
+  // Personal views (issue #1): board layout, move a card with the one-thumb button, then back to list.
+  await a.goto(`${BASE}/t/${teamId}/tasks`);
+  await a.getByRole("radio", { name: "לוח" }).click();
+  await a.locator('[data-lane="todo"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.getByRole("button", { name: 'העברת "להתקשר הביתה" אל בתהליך' }).click();
+  await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.reload();
+  if ((await a.getByRole("radio", { name: "לוח" }).getAttribute("aria-checked")) !== "true") fail("task layout not remembered");
+  await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.screenshot({ path: `${OUT}/tasks-board.png`, fullPage: true });
+  await a.getByRole("radio", { name: "רשימה" }).click();
+  await a.getByText("בתהליך", { exact: true }).first().waitFor(); // the list tags it too
+  await a.waitForTimeout(500); // let the layout save before navigating
+  await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
+  step("A moved a task to in progress on their board; layout remembered");
+
   // Edit a team task's text and time.
   await a.getByRole("button", { name: "עריכת המשימה: להגיש סיכום שיעור" }).first().click();
   const taskEditForm = a.locator("form", { has: a.getByRole("button", { name: "שמירה", exact: true }) });

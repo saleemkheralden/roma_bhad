@@ -167,6 +167,26 @@ isOneToOne: false
       referencedColumns: ["id","team_id"]
     }
                   ]
+                },"task_lanes": {
+                  Row: {
+                    "lane": string,"position": number,"task_id": number,"team_id": number,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "lane"?: string,"position"?: number,"task_id": number,"team_id": number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "lane"?: string,"position"?: number,"task_id"?: number,"team_id"?: number,"updated_at"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "task_lanes_task_id_team_id_fkey"
+      columns: ["task_id","team_id"]
+isOneToOne: false
+      referencedRelation: "tasks"
+      referencedColumns: ["id","team_id"]
+    }
+                  ]
                 },"tasks": {
                   Row: {
                     "assignee_member_id": number | null,"created_at": string,"created_by": string | null,"done_at": string | null,"done_by": string | null,"due_on": string | null,"due_time": string | null,"id": number,"notes": string,"owner_id": string | null,"status": string,"team_id": number,"title": string,"visibility": string
@@ -243,6 +263,20 @@ isOneToOne: false
                   }
                   Update: {
                     "created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"user_settings": {
+                  Row: {
+                    "task_layout": string,"updated_at": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "task_layout"?: string,"updated_at"?: string,"user_id"?: string
+                  }
+                  Update: {
+                    "task_layout"?: string,"updated_at"?: string,"user_id"?: string
                   }
                   Relationships: [
                     

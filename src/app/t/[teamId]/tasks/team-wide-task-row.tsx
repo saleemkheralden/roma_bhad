@@ -22,6 +22,7 @@ export function TeamWideTaskRow({
   canCommand,
   setCompletion,
   closeTask,
+  doing = false,
   editor,
 }: {
   title: string;
@@ -34,6 +35,7 @@ export function TeamWideTaskRow({
   canCommand: boolean;
   setCompletion: (memberId: number, done: boolean) => Promise<ActionResult>;
   closeTask: (done: boolean) => Promise<ActionResult>;
+  doing?: boolean;
   editor?: ReactNode;
 }) {
   const [done, setDone] = useState(() => new Set(initialDone));
@@ -102,6 +104,7 @@ export function TeamWideTaskRow({
             ) : null}
             <span>{s.everyone}</span>
             <span className="font-bold text-present-ink">{s.progress(finished, members.length)}</span>
+            {doing && !mine ? <span className="font-bold text-now-ink">{s.doingTag}</span> : null}
           </p>
           {editor}
         </div>
