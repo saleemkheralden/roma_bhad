@@ -2,6 +2,8 @@
 
 import { refresh } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
+import { notifyAssignment, notifyTeamTask } from "@/lib/notify";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/server";
 import { strings } from "@/lib/strings";
@@ -142,7 +144,7 @@ export async function addAssignment(teamId: number, _p: ActionResult, formData: 
   const start = text(formData, "start_date");
   const end = text(formData, "end_date") || start;
   if (!roleId || !memberId || !start || end < start) return { error: strings.common.genericError };
-  return run((db) =>
+  const result = await run((db) =>
     db.from("role_assignments").insert({
       team_id: teamId,
       role_id: roleId,
@@ -151,6 +153,8 @@ export async function addAssignment(teamId: number, _p: ActionResult, formData: 
       end_date: end,
     }),
   );
+  if (result?.ok) after(() => notifyAssignment(teamId, memberId, roleId, start, end));
+  return result;
 }
 
 export async function removeAssignment(teamId: number, assignmentId: number) {
@@ -213,6 +217,10 @@ export async function createTask(teamId: number, _p: ActionResult, formData: For
     .select("id")
     .single();
   if (error || !data) return fail(error);
+  if (visibility === "team") {
+    const creator = (claims?.claims?.sub as string | undefined) ?? null;
+    after(() => notifyTeamTask(teamId, title.slice(0, 120), assignee, creator));
+  }
   const steps = parseSteps(String(formData.get("steps") ?? ""));
   if (steps.length > 0) {
     const { error: stepsError } = await supabase

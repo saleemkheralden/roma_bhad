@@ -89,7 +89,6 @@ Team and private tasks, due dates, a "my day" view (my private tasks + team task
 An embedded Google Calendar (then a native "today" list from the Calendar API), a read-only Google Sheets view (for example the security-team list rendered as a clean table), and caching for weak reception.
 
 ### Phase 4: Leadership simulation features (weeks 8–9)
-- **Name trainer**: photo/role/nickname → name flashcards and a quiz before your התנסות starts.
 - "Handover" notes from one role-holder to the next (written in the evening, read by tomorrow's holder).
 - Notifications: daytime push for role-holders only, plus an evening summary for everyone.
 - (The basic role rotation moved into Phase 1.)
@@ -154,14 +153,12 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Error states (sheet not shared, quota exceeded)
 
 ### Phase 4: Simulation features
-- [ ] Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)
-- [ ] Roll-call "practice mode": a photo or nickname is shown and you pick the name
 - [ ] Handover notes between role-holders
-- [ ] Web push for role-holders during the day; an evening summary for everyone
+- [x] Web push: role-holders get role assignments and new team tasks right away; everyone with notifications on gets an evening summary (daily Vercel Cron ~18:00)
 
 ### Phase 5: Scale
 - [ ] Company level: a company holds teams; company dashboard
-- [ ] Guard/security-team rotation with fairness points and blocked-out dates
+- [ ] ~~Guard/security-team rotation~~ — postponed: a guard roster is an operational schedule (CLAUDE.md); revisit only with information-security approval
 - [ ] Offline support for roll call (service worker + sync queue)
 - [ ] Export all data, then delete it all (end of course)
 - [ ] Onboarding for other teams

@@ -2,7 +2,7 @@
 // Drives the installed Chrome with playwright-core; reads email codes from Mailpit.
 // Usage: node scripts/e2e-smoke.mjs [screenshot-dir]
 import { chromium } from "playwright-core";
-import { mkdirSync } from "node:fs";
+import { mkdirSync, readFileSync } from "node:fs";
 
 const BASE = "http://localhost:3000";
 const MAIL = "http://127.0.0.1:54324";
@@ -306,6 +306,38 @@ try {
   if (!(await a.getByText("למחר").first().isVisible())) fail("catch-up should list tasks due tomorrow");
   await a.screenshot({ path: `${OUT}/today-tasks.png`, fullPage: true });
   step("Today shows my day and the catch-up");
+
+  // ---- Evening summary (cron) ------------------------------------------------
+  // A fake device for A (inserted with the local secret key), then a dry run of the cron.
+  const env = Object.fromEntries(
+    readFileSync(".env.local", "utf8").split(/\r?\n/).filter((l) => /^[A-Z_]+=/.test(l)).map((l) => [l.slice(0, l.indexOf("=")), l.slice(l.indexOf("=") + 1)]),
+  );
+  const rest = (path, init = {}) =>
+    fetch(`http://127.0.0.1:54321/rest/v1/${path}`, {
+      ...init,
+      headers: { apikey: env.SUPABASE_SECRET_KEY, Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`, "Content-Type": "application/json", ...(init.headers ?? {}) },
+    });
+  const unauth = await fetch(`${BASE}/api/cron/evening-summary?dry=1`);
+  if (unauth.status !== 401) fail(`cron without the secret should be 401, got ${unauth.status}`);
+  const [aMember] = await (await rest(`team_members?team_id=eq.${teamId}&first_name=eq.${encodeURIComponent("אבי")}&select=user_id`)).json();
+  await rest("push_subscriptions", {
+    method: "POST",
+    body: JSON.stringify({ user_id: aMember.user_id, endpoint: `https://push.invalid/${run}`, p256dh: "p256dh-test-key", auth: "auth-test-key" }),
+  });
+  const dryRes = await fetch(`${BASE}/api/cron/evening-summary?dry=1`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+  const { messages = [] } = await dryRes.json();
+  const mine = messages.find((m) => m.teamId === Number(teamId));
+  if (!mine) fail("evening summary produced no message for A");
+  else {
+    console.log(`  summary: ${mine.title} | ${mine.body}`);
+    if (!mine.body.includes("בתפקיד מחר: סמל איתי לוי")) fail("summary should name tomorrow's role-holder");
+    if (!/משימ/.test(mine.body)) fail("summary should mention tomorrow's task");
+  }
+  // A real (non-dry) run must not crash on an unreachable device.
+  const realRes = await fetch(`${BASE}/api/cron/evening-summary`, { headers: { Authorization: `Bearer ${env.CRON_SECRET}` } });
+  if (!realRes.ok) fail(`cron run failed: ${realRes.status}`);
+  await rest(`push_subscriptions?endpoint=eq.${encodeURIComponent(`https://push.invalid/${run}`)}`, { method: "DELETE" });
+  step("evening summary: secret required, right message for A, real run survives a dead device");
 
   await a.goto(`${BASE}/t/${teamId}/attendance`);
   await a.getByText("נוכחויות אחרונות").first().waitFor();
