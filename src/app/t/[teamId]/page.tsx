@@ -8,7 +8,9 @@ import { tally, type Mark } from "@/lib/attendance";
 import { bucketOf, byDue, doneForMe, isMine } from "@/lib/tasks";
 import { buttonClass } from "@/components/button-class";
 import { Section, TallyBar } from "@/components/section";
-import { CalendarEmbed } from "@/components/calendar-embed";
+import { TeamCalendar } from "@/components/team-calendar";
+import { getCalendarEvents } from "@/lib/google-calendar";
+import { addDays } from "@/lib/tasks";
 import { StartRollCall } from "./start-roll-call";
 import { startRollCall } from "./actions";
 import { TaskItem, type TaskContext } from "./tasks/task-item";
@@ -122,6 +124,11 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
     .filter((x) => bucketOf(x, ctx.today) === "tomorrow" && isMine(x, myId) && !doneForMe(x, myId))
     .sort(byDue);
   const evening = israelHour() >= 17;
+  const calendarIds = calendars.map((cal) => cal.external_id);
+  // Same arguments as TeamCalendar below, so this is a cache hit, not a second fetch.
+  const cal = calendarIds.length ? await getCalendarEvents([...calendarIds].sort(), ctx.today, 7) : null;
+  const tomorrowIso = addDays(ctx.today, 1);
+  const tomorrowEvents = cal?.status === "ok" ? cal.events.filter((e) => e.day === tomorrowIso) : [];
 
   const tasksLink = (
     <Link href={`/t/${teamId}/tasks`} className="inline-flex min-h-11 items-center text-sm font-bold underline">
@@ -141,7 +148,7 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
 
   const catchUpSection = (
     <Section key="catch-up" title={c.title}>
-      {newToday.length === 0 && dueTomorrow.length === 0 ? (
+      {newToday.length === 0 && dueTomorrow.length === 0 && tomorrowEvents.length === 0 ? (
         <p className="text-base text-ink-2">{c.nothing}</p>
       ) : (
         <>
@@ -154,7 +161,22 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
           {dueTomorrow.length > 0 ? (
             <>
               <h3 className="mb-1 text-sm font-extrabold text-ink-2">{c.dueTomorrow}</h3>
-              <ul className="divide-y divide-rule border-y border-rule">{dueTomorrow.slice(0, 8).map(taskRow)}</ul>
+              <ul className="mb-4 divide-y divide-rule border-y border-rule">{dueTomorrow.slice(0, 8).map(taskRow)}</ul>
+            </>
+          ) : null}
+          {tomorrowEvents.length > 0 ? (
+            <>
+              <h3 className="mb-1 text-sm font-extrabold text-ink-2">{strings.calendar.tomorrowEvents}</h3>
+              <ul className="divide-y divide-rule border-y border-rule">
+                {tomorrowEvents.slice(0, 8).map((e) => (
+                  <li key={e.id} className="flex items-baseline gap-3 py-2">
+                    <span className="w-24 shrink-0 text-sm font-bold text-ink-2" dir="ltr">
+                      {e.allDay ? <span dir="rtl">{strings.calendar.allDay}</span> : e.end ? `${e.start}–${e.end}` : e.start}
+                    </span>
+                    <span className="min-w-0 flex-1 text-base">{e.title}</span>
+                  </li>
+                ))}
+              </ul>
             </>
           ) : null}
         </>
@@ -181,7 +203,7 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
       {myDaySection}
       {calendars.length > 0 ? (
         <Section title={strings.calendar.title}>
-          <CalendarEmbed ids={calendars.map((cal) => cal.external_id)} />
+          <TeamCalendar ids={calendarIds} today={ctx.today} canManage={ctx.permissions.can_manage} teamId={teamId} />
         </Section>
       ) : ctx.permissions.can_manage ? (
         <Section title={strings.calendar.title}>

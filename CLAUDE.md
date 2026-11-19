@@ -10,7 +10,7 @@ A team hub for IDF officers-course cadets. It brings together in one Hebrew mobi
 
 The full research, roadmap and TODO list are in `ROADMAP.md`. Update its checkboxes when you finish a task.
 
-**Current phase:** 3 in progress: calendar embed done (Phases 1–2 done). **Production:** https://roma-bhad.vercel.app (Vercel project `roma_bhad`, auto-deploys from GitHub `main`); Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Google sign-in works in production. Still to do online: custom SMTP before turning email sign-in back on (`EMAIL_LOGIN=on`). The server-side calendar reader (service account) lives on branch `feature/calendar-service-account`, not on main. Repo: `saleemkheralden/roma_bhad` (private), Vercel project `roma_bhad`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
+**Current phase:** 3 in progress: calendar (embed + server-side read as Roma's Google account `roma.d.standard@gmail.com`) done; Sheets next (Phases 1–2 done). **Production:** https://roma-bhad.vercel.app (Vercel project `roma_bhad`, auto-deploys from GitHub `main`); Supabase project `roma` (ref `tuylurlxwgisrejgiwpr`, Frankfurt), migrations pushed with `npx supabase db push --remote --yes` (CLI v3 targets local by default). Google sign-in works in production. Still to do online: custom SMTP before turning email sign-in back on (`EMAIL_LOGIN=on`). Repo: `saleemkheralden/roma_bhad` (private), Vercel project `roma_bhad`. Phase 0 approval is still pending, so don't share the app with other cadets yet.
 
 @AGENTS.md: Next.js 16 has breaking changes. Read the relevant guide in `node_modules/next/dist/docs/` before writing Next.js code.
 
@@ -40,7 +40,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
   - Private tasks (`visibility = 'private'`): only `owner_id = auth.uid()`.
   - Roll call: staff plus whoever holds the command role right now, from `role_assignments` where today falls between `start_date` and `end_date`.
 - Schema changes only through migrations in `supabase/migrations/`. Never change production by hand.
-- Secrets go in `.env.local` (git-ignored) and Vercel environment variables. Commit a `.env.example`. The Supabase service-role key and the Google service-account key are used only on the server, never with a `NEXT_PUBLIC_` prefix.
+- Secrets go in `.env.local` (git-ignored) and Vercel environment variables. Commit a `.env.example`. The Supabase service-role key and the Google OAuth secret/refresh token are used only on the server, never with a `NEXT_PUBLIC_` prefix.
 - Keep it simple: this is a course tool with ~30–150 users. Don't add infrastructure the free tiers don't need.
 
 ## Data model (source of truth: `supabase/migrations/`)
@@ -48,7 +48,7 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - Permission helpers live in the unexposed `private` schema: `is_team_member`, `is_team_admin`, `can_command` (staff, or a command role today in Asia/Jerusalem), `can_manage` (admin or command). `public.my_permissions()` exposes them to the UI for display only.
 - RPCs: `create_team`, `preview_team`, `join_team`, `regenerate_invite_code`. New tables need explicit `grant`s (Supabase no longer exposes them automatically).
 - `tasks` (Phase 2): `visibility` team|private (immutable), `assignee_member_id` (null = whole team), `due_on` + optional `due_time`, `status` open|done. Trigger `private.guard_tasks` forces `owner_id` to the caller on private tasks, sets `done_at`/`done_by`, and lets a non-command assignee change only `status`. Team-wide tasks (no assignee) are closed by command only; each cadet's part lives in `task_completions` (own row, or anyone's for command; only while the task is open).
-- `integrations` (Phase 3): `kind` gcal|gsheet + `external_id` (only an identifier; events and sheet contents stay in Google). Members read, managers add/remove, max 3 calendars. `src/lib/calendar.ts` parses pasted IDs/links/iframes and builds the embed URL.
+- `integrations` (Phase 3): `kind` gcal|gsheet + `external_id` (only an identifier; events and sheet contents stay in Google). Members read, managers add/remove, max 3 calendars. `src/lib/calendar.ts` parses pasted IDs/links/iframes and builds the embed URL. `src/lib/google-calendar.ts` reads events server-side as Roma's own Google account (the calendar is shared with it, "See all event details"); it authorised Roma once with read-only scope via `scripts/connect-google-calendar.mjs`, and its refresh token lives only in server env (`GOOGLE_OAUTH_CLIENT_ID` / `_SECRET`, `GOOGLE_CALENDAR_REFRESH_TOKEN`, `GOOGLE_CALENDAR_ACCOUNT`). Requests only id/title/status/times, **never location or description**; cached ~1 min with `use cache`, never stored. Without access it falls back to the embed.
 - Personal task views (issue #1): `user_settings` (my `task_layout`: list|board|days) and `task_lanes` (my board lane `todo|doing` + `position` per task). Both own-row only; a lane can only be set on a task the caller can see. "Done" is never a lane: it comes from `tasks.status` or my `task_completions` row. The "team" tab always stays a list.
 - Planned: `companies`. See `ROADMAP.md` §2.
 
@@ -67,7 +67,8 @@ The app must stay **unclassified**. The IDF prohibits passing operational inform
 - `npx impeccable detect src`: scan the UI for design issues
 - `npx supabase start` / `npx supabase stop`: local Supabase (Docker Desktop must be running). Studio http://127.0.0.1:54323, Mailpit (sign-in codes) http://127.0.0.1:54324
 - `npx supabase migration new <name>`: new migration; `npx supabase migration up --local`: apply new migrations and keep local data; `npx supabase db reset --yes`: wipe and re-apply everything
-- `npm run test:unit`: parser checks (`scripts/test-calendar.ts`, run by Node directly)
+- `npm run test:unit`: unit checks for the calendar parser and agenda (`scripts/test-*.ts`, run by Node with `scripts/ts-resolve.mjs`)
+- `node scripts/connect-google-calendar.mjs <desktop-oauth-client.json> [--vercel]`: one-time, sign in as Roma's Google account so the server can read shared calendars; saves the refresh token to `.env.local` (and Vercel) without printing it
 - `npm run db:test`: pgTAP RLS tests (`supabase/tests/`); `npm run db:types`: regenerate `src/lib/supabase/database.types.ts`
 - `npx supabase db advisors --type all`: security and performance checks
 - `node scripts/make-icons.mjs`: re-render the app icons (then re-embed provenance with `impeccable embed-prompt`)
