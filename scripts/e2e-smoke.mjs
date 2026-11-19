@@ -264,6 +264,7 @@ try {
   await a.goto(`${BASE}/t/${teamId}/tasks`);
   await a.getByRole("radio", { name: "לוח" }).click();
   await a.locator('[data-lane="todo"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.waitForLoadState("networkidle"); // the layout save refreshes the page; don't click a card mid-refresh
   await a.getByRole("button", { name: 'העברת "להתקשר הביתה" אל בתהליך' }).click();
   await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
   await a.reload();
@@ -399,6 +400,32 @@ try {
   await a.getByRole("button", { name: "סגירת המשימה לכולם" }).click();
   await a.locator("summary", { hasText: "הושלמו" }).waitFor();
   step("command marked a cadet (2/13) and closed the task");
+
+  // ---- Company level ---------------------------------------------------------
+  await a.goto(`${BASE}/t/${teamId}/team#company`);
+  await a.locator("summary", { hasText: "פתיחת פלוגה חדשה" }).click();
+  const coForm = a.locator("form", { has: a.getByRole("button", { name: "פתיחת הפלוגה" }) });
+  await coForm.getByLabel("שם הפלוגה").fill("פלוגה ב׳");
+  await coForm.getByRole("button", { name: "פתיחת הפלוגה" }).click();
+  await a.waitForURL(/\/c\/\d+$/);
+  const companyUrl = a.url();
+  const card = a.locator("li", { has: a.getByRole("heading", { name: "צוות 3" }) });
+  await card.waitFor();
+  if (!(await card.getByText("11/13 נוכחים").count())) fail("dashboard should show the team's roll call (11/13)");
+  if (!(await card.getByText("שירה אבוטבול").count())) fail("dashboard should list the absentee");
+  const companyCode = (await a.locator("p[dir=ltr]").first().innerText()).trim();
+  await a.screenshot({ path: `${OUT}/company.png`, fullPage: true });
+  step("team admin created a company; dashboard shows the team's roll call and absentees");
+
+  const bCo = await b.goto(companyUrl);
+  if (bCo?.status() !== 404 && (await b.getByRole("heading", { name: "צוות 3" }).count())) fail("a non-member sees the company dashboard");
+  await b.goto(`${BASE}/join?code=${companyCode}`);
+  await b.getByLabel("השם שלך בפלוגה").fill("תמר גולן");
+  await b.getByRole("button", { name: "הצטרפות לפלוגה" }).click();
+  await b.waitForURL(/\/c\/\d+$/);
+  await b.getByRole("heading", { name: "צוות 3" }).waitFor();
+  if (await b.locator("summary", { hasText: "עריכת תפקידים פלוגתיים" }).count()) fail("a plain company member can manage roles");
+  step("company: hidden from non-members; joined with the code, read-only for a plain member");
 
   // ---- Icons are served -------------------------------------------------
   for (const path of ["/icons/icon-192.png", "/icons/icon-512.png", "/apple-icon.png", "/icon.png"]) {

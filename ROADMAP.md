@@ -122,7 +122,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [x] Roster screen: list, add and remove names, admin/staff flags
 - [x] Roster: edit names, paste a list (one per line, or two columns from a sheet)
 - [x] Configurable role list per team (defaults: א׳ צוות, סמל, קל״ג, קמב״צ)
-- [ ] Company-level roles (א׳ פלוגה …) once companies exist
+- [x] Company-level roles (א׳ פלוגה, סמל פלוגה …), configurable and assigned by date
 - [x] `role_assignments` + today's role-holders on the board; assign by date range (so tomorrow's holders can be set in the evening)
 - [x] RLS: roll call only for staff + today's role-holders (team tasks come in Phase 2)
 - [x] Roll-call screen: tap each name for present/late/absent plus a reason; live counter
@@ -160,7 +160,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Web push for role-holders during the day; an evening summary for everyone
 
 ### Phase 5: Scale
-- [ ] Company level: a company holds teams; company dashboard
+- [x] Company level: a company holds teams (linked by the team admin with the company code); read-only company dashboard: each team's roll call today with absentees, today's roles, open/overdue tasks
 - [ ] Guard/security-team rotation with fairness points and blocked-out dates
 - [ ] Offline support for roll call (service worker + sync queue)
 - [ ] Export all data, then delete it all (end of course)

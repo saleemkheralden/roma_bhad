@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { headers } from "next/headers";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { fullName, getCalendars, getTeamContext } from "@/lib/data";
@@ -9,6 +10,9 @@ import { Section } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
+import { getTeamCompany } from "@/lib/company-data";
+import { createCompany, linkTeam, unlinkTeam } from "../../../c/actions";
+import { buttonClass } from "@/components/button-class";
 import {
   addCalendar,
   addAssignment,
@@ -31,6 +35,8 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
   const [ctx, calendars] = await Promise.all([getTeamContext(teamId), getCalendars(teamId)]);
   const { can_manage: canManage, is_admin: isAdmin } = ctx.permissions;
   const c = strings.calendar;
+  const company = await getTeamCompany(ctx.team.company_id);
+  const co = strings.company;
   const romaAccount = calendarAccountEmail();
   const access = await Promise.all(calendars.map((cal) => calendarAccess(cal.external_id)));
   const h = await headers();
@@ -250,6 +256,56 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
           />
         ) : null}
       </Section>
+
+      {ctx.team.company_id || isAdmin ? (
+        <Section id="company" title={co.section}>
+          {ctx.team.company_id ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-base">{company ? co.linkedTo(company.name) : co.linkedHidden}</p>
+              {company ? (
+                <Link href={`/c/${company.id}`} className={buttonClass("outline", "self-start")}>
+                  {co.openDashboard}
+                </Link>
+              ) : null}
+              {isAdmin ? (
+                <EditArea
+                  title={co.unlink}
+                  remove={
+                    <ActionButton action={unlinkTeam.bind(null, teamId)} confirm={co.confirmUnlink} variant="danger">
+                      {co.unlink}
+                    </ActionButton>
+                  }
+                />
+              ) : null}
+            </div>
+          ) : (
+            <>
+              <p className="text-base text-ink-2">{co.notLinked}</p>
+              <EditArea
+                title={co.linkWithCode}
+                add={
+                  <ActionForm action={linkTeam.bind(null, teamId)} className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Field label={co.codeLabel} name="code" required dir="ltr" maxLength={8} autoCapitalize="characters" className="tracking-[0.2em] uppercase" />
+                    </div>
+                    <SubmitButton variant="outline">{co.link}</SubmitButton>
+                  </ActionForm>
+                }
+              />
+              <EditArea
+                title={co.createTitle}
+                add={
+                  <ActionForm action={createCompany.bind(null, teamId)} className="flex flex-col gap-2">
+                    <Field label={co.createName} name="name" placeholder={co.createNameHint} required maxLength={60} />
+                    <Field label={co.displayName} name="display_name" required maxLength={60} defaultValue={ctx.me ? fullName(ctx.me) : ""} />
+                    <SubmitButton variant="outline">{co.create}</SubmitButton>
+                  </ActionForm>
+                }
+              />
+            </>
+          )}
+        </Section>
+      ) : null}
 
       <Section id="calendar" title={c.settings}>
         {calendars.length === 0 ? (
