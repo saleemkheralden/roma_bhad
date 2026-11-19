@@ -38,6 +38,38 @@ async function accessToken(creds: Creds) {
   return ((await res.json()) as { access_token: string }).access_token;
 }
 
+export type CalendarAccess =
+  | { status: "ok"; name: string }
+  | { status: "not-shared" }
+  | { status: "not-configured" }
+  | { status: "error" };
+
+/** Can Roma's account read this calendar right now? Returns its name when it can. Uncached. */
+export async function probeCalendar(id: string): Promise<CalendarAccess> {
+  const creds = credentials();
+  if (!creds) return { status: "not-configured" };
+  try {
+    const token = await accessToken(creds);
+    const res = await fetch(
+      `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(id)}?fields=summary`,
+      { headers: { Authorization: `Bearer ${token}` } },
+    );
+    if (res.status === 404 || res.status === 403) return { status: "not-shared" };
+    if (!res.ok) return { status: "error" };
+    const data = (await res.json()) as { summary?: string };
+    return { status: "ok", name: (data.summary ?? "").trim().slice(0, 60) };
+  } catch {
+    return { status: "error" };
+  }
+}
+
+/** Same check, cached about a minute: for status badges on page views. */
+export async function calendarAccess(id: string): Promise<CalendarAccess> {
+  "use cache";
+  cacheLife("minutes");
+  return probeCalendar(id);
+}
+
 export type CalendarResult =
   | { status: "ok"; events: CalEvent[]; notShared: string[] }
   | { status: "not-configured" }

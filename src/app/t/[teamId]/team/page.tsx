@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { ChevronDown, Trash2 } from "lucide-react";
 import { fullName, getCalendars, getTeamContext } from "@/lib/data";
-import { calendarAccountEmail } from "@/lib/google-calendar";
+import { calendarAccess, calendarAccountEmail } from "@/lib/google-calendar";
 import { shortDate, weekdayOf } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section } from "@/components/section";
@@ -31,6 +31,8 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
   const [ctx, calendars] = await Promise.all([getTeamContext(teamId), getCalendars(teamId)]);
   const { can_manage: canManage, is_admin: isAdmin } = ctx.permissions;
   const c = strings.calendar;
+  const romaAccount = calendarAccountEmail();
+  const access = await Promise.all(calendars.map((cal) => calendarAccess(cal.external_id)));
   const h = await headers();
   const origin = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}`;
   const inviteUrl = `${origin}/join?code=${ctx.team.invite_code}`;
@@ -250,42 +252,59 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
       </Section>
 
       <Section id="calendar" title={c.settings}>
-        {calendars.length > 0 && calendarAccountEmail() ? (
-          <div className="mb-3 rounded-[var(--radius-control)] border border-rule bg-paper p-3">
-            <p className="text-sm">{c.shareWith}</p>
-            <p dir="ltr" className="mt-1 break-all text-start text-sm font-bold">{calendarAccountEmail()}</p>
-            <p className="mt-1 text-xs text-ink-2">{c.shareSteps}</p>
-            <div className="mt-2">
-              <CopyButton text={calendarAccountEmail() ?? ""}>{c.copyEmail}</CopyButton>
-            </div>
-          </div>
-        ) : null}
         {calendars.length === 0 ? (
           <p className="text-base text-ink-2">{c.empty}</p>
         ) : (
           <ul className="divide-y divide-rule border-y border-rule">
-            {calendars.map((cal) => (
-              <li key={cal.id} className="py-2.5">
-                {cal.label ? <p className="text-base font-bold">{cal.label}</p> : null}
-                <p dir="ltr" className="truncate text-start text-sm text-ink-2">
-                  {cal.external_id}
-                </p>
-              </li>
-            ))}
+            {calendars.map((cal, i) => {
+              const a = access[i];
+              return (
+                <li key={cal.id} className="py-2.5">
+                  <p className="flex flex-wrap items-baseline gap-x-2">
+                    <span className="text-base font-bold">{cal.label || c.title}</span>
+                    {a.status === "ok" ? (
+                      <span className="text-xs font-bold text-present-ink">{c.statusOk}</span>
+                    ) : a.status === "not-shared" || a.status === "error" ? (
+                      <span className="text-xs font-bold text-absent-ink">{c.statusNotShared}</span>
+                    ) : null}
+                  </p>
+                  <p dir="ltr" className="truncate text-start text-sm text-ink-2">
+                    {cal.external_id}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
         )}
         {canManage ? (
           <EditArea
             title={c.connect}
             add={
-              <ActionForm action={addCalendar.bind(null, teamId)} className="flex flex-col gap-2">
-                <p className="text-sm text-ink-2">{c.settingsHint}</p>
+              <ActionForm action={addCalendar.bind(null, teamId)} className="flex flex-col gap-3">
+                {romaAccount ? (
+                  <ol className="flex flex-col gap-3 rounded-[var(--radius-control)] border border-rule bg-paper p-3 text-sm">
+                    <li>
+                      <span className="font-bold">1. </span>
+                      {c.step1}
+                      <span dir="ltr" className="mt-1 block break-all text-start font-bold">{romaAccount}</span>
+                      <span className="mt-2 block">
+                        <CopyButton text={romaAccount}>{c.copyEmail}</CopyButton>
+                      </span>
+                    </li>
+                    <li>
+                      <span className="font-bold">2. </span>
+                      {c.step2}
+                    </li>
+                  </ol>
+                ) : (
+                  <p className="text-sm text-ink-2">{c.settingsHint}</p>
+                )}
                 <Field label={c.field} name="calendar" placeholder={c.placeholder} dir="ltr" required maxLength={2000} />
-                <Field label={c.label} name="label" placeholder={c.labelPlaceholder} maxLength={60} />
+                <Field label={romaAccount ? c.labelAuto : c.label} name="label" placeholder={c.labelPlaceholder} maxLength={60} />
                 <p className="rounded-[var(--radius-cell)] bg-now-wash px-3 py-2 text-sm font-medium text-now-ink">
                   {c.securityNote}
                 </p>
-                <p className="text-sm text-ink-2">{c.privateNote}</p>
+                {romaAccount ? null : <p className="text-sm text-ink-2">{c.privateNote}</p>}
                 <SubmitButton variant="outline">{c.connect}</SubmitButton>
               </ActionForm>
             }
