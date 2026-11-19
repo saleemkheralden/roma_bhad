@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { ListPlus } from "lucide-react";
 import { strings } from "@/lib/strings";
-import { ActionForm, Field, SelectField, SubmitButton, type FormAction } from "@/components/ui";
+import { ActionForm, Field, SelectField, SubmitButton, TextArea, type FormAction } from "@/components/ui";
 
 const s = strings.tasks;
 
@@ -19,9 +20,16 @@ export function NewTaskForm({
 }) {
   const [visibility, setVisibility] = useState<"team" | "private">(canCommand ? "team" : "private");
   const [dueOn, setDueOn] = useState("");
+  const [withSteps, setWithSteps] = useState(false);
+  // Collapse the steps box again once the task is saved.
+  const create: FormAction = async (prev, formData) => {
+    const result = await action(prev, formData);
+    if (result?.ok) setWithSteps(false);
+    return result;
+  };
 
   return (
-    <ActionForm action={action} className="flex flex-col gap-3">
+    <ActionForm action={create} className="flex flex-col gap-3">
       <Field
         label={s.titleField}
         name="title"
@@ -76,6 +84,18 @@ export function NewTaskForm({
         <Field label={s.time} name="due_time" type="time" disabled={!dueOn} />
       </div>
       <Field label={s.notes} name="notes" maxLength={500} />
+      {withSteps ? (
+        <TextArea label={s.stepsField} name="steps" hint={s.stepsHint} placeholder={s.stepsPlaceholder} autoFocus />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setWithSteps(true)}
+          className="-ms-1 inline-flex min-h-11 items-center gap-1.5 self-start px-1 text-sm font-bold text-ink-2 hover:text-ink"
+        >
+          <ListPlus aria-hidden size={18} />
+          {s.addSteps}
+        </button>
+      )}
       <SubmitButton>{s.create}</SubmitButton>
     </ActionForm>
   );

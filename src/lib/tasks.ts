@@ -12,7 +12,11 @@ export type TaskLike = {
   owner_id: string | null;
   created_at: string;
   task_completions?: { member_id: number }[];
+  task_checklist_items?: { id: number; position: number; done: boolean }[];
 };
+
+/** What this viewer may do with a task's checklist: add/remove steps, only tick them, or just read. */
+export type ChecklistAccess = "edit" | "tick" | "read";
 
 export type Bucket = "overdue" | "today" | "tomorrow" | "later" | "none";
 export const BUCKETS: Bucket[] = ["overdue", "today", "tomorrow", "later", "none"];
@@ -74,4 +78,65 @@ export function doneForMe(t: TaskLike, myMemberId: number | null) {
 export function canToggle(t: TaskLike, myMemberId: number | null, canCommand: boolean) {
   if (t.visibility === "private") return true;
   return canCommand || (myMemberId !== null && t.assignee_member_id === myMemberId);
+}
+
+// Personal views (issue #1) ----------------------------------------------------
+
+export type TaskLayout = "list" | "board" | "days";
+export const LAYOUTS: TaskLayout[] = ["list", "board", "days"];
+export function asLayout(v: string | null | undefined): TaskLayout {
+  return v === "board" || v === "days" ? v : "list";
+}
+
+/** Board lanes, in reading order (right to left in RTL). Only "doing" is stored; "done" comes from the task. */
+export type Lane = "todo" | "doing" | "done";
+export const LANES: Lane[] = ["todo", "doing", "done"];
+export type Placement = { task_id: number; lane: string; position: number };
+
+/** Where a task sits on this viewer's board. */
+export function laneOf(t: TaskLike, myMemberId: number | null, placement: Placement | undefined): Lane {
+  if (doneForMe(t, myMemberId)) return "done";
+  return placement?.lane === "doing" ? "doing" : "todo";
+}
+
+/** Card order within a lane: placed cards by position, then the rest by due date. */
+export function byPlacement(placements: Map<number, Placement>) {
+  return (a: TaskLike, b: TaskLike) => {
+    const pa = placements.get(a.id)?.position;
+    const pb = placements.get(b.id)?.position;
+    if (pa !== undefined && pb !== undefined && pa !== pb) return pa - pb;
+    if (pa !== undefined && pb === undefined) return -1;
+    if (pa === undefined && pb !== undefined) return 1;
+    return byDue(a, b);
+  };
+}
+
+/** Day groups for the "by day" view: overdue, then each date, then undated. */
+export function dayKey(t: Pick<TaskLike, "due_on">, today: string): string {
+  if (!t.due_on) return "none";
+  return t.due_on < today ? "overdue" : t.due_on;
+}
+
+/**
+ * Mirrors private.checklist_access (the database still decides): the owner edits a private
+ * task's steps, command edits a team task's, and the assignee may tick theirs. Closed: read-only.
+ */
+export function checklistAccess(t: TaskLike, myMemberId: number | null, canCommand: boolean): ChecklistAccess {
+  if (t.status !== "open") return "read";
+  if (t.visibility === "private" || canCommand) return "edit";
+  return myMemberId !== null && t.assignee_member_id === myMemberId ? "tick" : "read";
+}
+
+/** Steps in their saved order (position, then creation order). */
+export function sortSteps<T extends { id: number; position: number }>(items: T[]) {
+  return [...items].sort((a, b) => a.position - b.position || a.id - b.id);
+}
+
+/** "Step one\n2. step two\n- step three" -> ["Step one", "step two", "step three"]: max 20, 120 chars each. */
+export function parseSteps(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((l) => l.replace(/^\s*(?:\d+[.)]|[-*•▪◦]|\[[ xX]?\])\s*/, "").trim().slice(0, 120))
+    .filter(Boolean)
+    .slice(0, 20);
 }

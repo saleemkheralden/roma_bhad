@@ -8,6 +8,7 @@ import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
 import { parseCalendarIds } from "@/lib/calendar";
 import { calendarAccountEmail, probeCalendar } from "@/lib/google-calendar";
+import { LANES, LAYOUTS, parseSteps, type Lane, type TaskLayout } from "@/lib/tasks";
 
 // Permissions are enforced by RLS and triggers in the database; these
 // functions only shape input and translate errors into Hebrew.
@@ -197,17 +198,31 @@ export async function createTask(teamId: number, _p: ActionResult, formData: For
   if (!title) return { error: strings.common.genericError };
   const supabase = await createClient();
   const { data: claims } = await supabase.auth.getClaims();
-  const { error } = await supabase.from("tasks").insert({
-    team_id: teamId,
-    visibility,
-    title: title.slice(0, 120),
-    notes: text(formData, "notes").slice(0, 500),
-    due_on: dueOn,
-    due_time: dueTime,
-    assignee_member_id: assignee,
-    created_by: claims?.claims?.sub,
-  });
-  if (error) return fail(error);
+  const { data, error } = await supabase
+    .from("tasks")
+    .insert({
+      team_id: teamId,
+      visibility,
+      title: title.slice(0, 120),
+      notes: text(formData, "notes").slice(0, 500),
+      due_on: dueOn,
+      due_time: dueTime,
+      assignee_member_id: assignee,
+      created_by: claims?.claims?.sub,
+    })
+    .select("id")
+    .single();
+  if (error || !data) return fail(error);
+  const steps = parseSteps(String(formData.get("steps") ?? ""));
+  if (steps.length > 0) {
+    const { error: stepsError } = await supabase
+      .from("task_checklist_items")
+      .insert(steps.map((s, i) => ({ task_id: data.id, team_id: teamId, text: s, position: i + 1 })));
+    if (stepsError) {
+      refresh(); // the task itself was saved
+      return failSteps(stepsError);
+    }
+  }
   refresh();
   return { ok: true };
 }
@@ -270,6 +285,110 @@ export async function setCompletion(teamId: number, taskId: number, memberId: nu
       .eq("team_id", teamId)
       .eq("task_id", taskId)
       .eq("member_id", memberId),
+  );
+}
+
+// Personal task views (issue #1) ----------------------------------------------
+
+/** Save my task layout. Personal: it changes nothing for anyone else. */
+export async function setTaskLayout(layout: TaskLayout): Promise<ActionResult> {
+  if (!LAYOUTS.includes(layout)) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { error } = await supabase
+    .from("user_settings")
+    .upsert({ task_layout: layout, updated_at: new Date().toISOString() });
+  if (error) return fail(error);
+  return { ok: true };
+}
+
+/**
+ * Move a card on my board. `order` is the target lane's task ids after the move.
+ * "done" goes through the task itself (status, or my part of a team-wide task),
+ * so RLS and the tasks trigger still decide; lanes and order are personal only.
+ */
+export async function moveTask(
+  teamId: number,
+  taskId: number,
+  move: { from: Lane; to: Lane; teamWide: boolean; myMemberId: number | null; order: number[] },
+): Promise<ActionResult> {
+  const { from, to, teamWide, myMemberId } = move;
+  if (!LANES.includes(from) || !LANES.includes(to)) return { error: strings.common.genericError };
+  const order = move.order.filter(Number.isInteger).slice(0, 300);
+  const supabase = await createClient();
+
+  if (from !== to && (from === "done" || to === "done")) {
+    const done = to === "done";
+    const result =
+      teamWide && myMemberId !== null
+        ? await setCompletion(teamId, taskId, myMemberId, done)
+        : await setTaskDone(teamId, taskId, done);
+    if (result?.error) return result;
+  }
+
+  if (to !== "done") {
+    const now = new Date().toISOString();
+    const rows = (order.includes(taskId) ? order : [...order, taskId]).map((id, position) => ({
+      task_id: id,
+      team_id: teamId,
+      lane: to,
+      position,
+      updated_at: now,
+    }));
+    const { error } = await supabase.from("task_lanes").upsert(rows);
+    if (error) return fail(error);
+  }
+  refresh();
+  return { ok: true };
+}
+
+// Task checklists ----------------------------------------------------------------
+
+function failSteps(error: PostgrestError | null): ActionResult {
+  if (error?.code === "23514" && error.message.includes("at most 20 checklist items")) return { error: strings.tasks.stepsLimit };
+  return fail(error);
+}
+
+/** Append one step (or several, one per line) to a task's checklist. Task editors only (RLS). */
+export async function addChecklistSteps(
+  teamId: number,
+  taskId: number,
+  _p: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const steps = parseSteps(String(formData.get("text") ?? ""));
+  if (steps.length === 0) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { data: last } = await supabase
+    .from("task_checklist_items")
+    .select("position")
+    .eq("team_id", teamId)
+    .eq("task_id", taskId)
+    .order("position", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  const start = (last?.position ?? 0) + 1;
+  const { error } = await supabase
+    .from("task_checklist_items")
+    .insert(steps.map((s, i) => ({ task_id: taskId, team_id: teamId, text: s, position: start + i })));
+  if (error) return failSteps(error);
+  refresh();
+  return { ok: true };
+}
+
+/** Tick or untick a step: task editors, or the assignee of an assigned team task (RLS). */
+export async function setChecklistStepDone(teamId: number, itemId: number, done: boolean) {
+  return run((db) =>
+    db
+      .from("task_checklist_items")
+      .update({ done }, { count: "exact" })
+      .eq("team_id", teamId)
+      .eq("id", itemId),
+  );
+}
+
+export async function removeChecklistStep(teamId: number, itemId: number) {
+  return run((db) =>
+    db.from("task_checklist_items").delete({ count: "exact" }).eq("team_id", teamId).eq("id", itemId),
   );
 }
 

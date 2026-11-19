@@ -13,7 +13,7 @@ function safeNext(next: string | null) {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : "/";
 }
 
-/** emailEnabled: email sign-in needs custom SMTP in production (EMAIL_LOGIN=on). */
+/** emailEnabled: local development only (EMAIL_LOGIN=on); production signs in with Google only. */
 export function LoginForm({ emailEnabled }: { emailEnabled: boolean }) {
   const router = useRouter();
   const params = useSearchParams();

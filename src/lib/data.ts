@@ -3,6 +3,7 @@ import { cache } from "react";
 import { notFound } from "next/navigation";
 import { createClient, getUserId } from "@/lib/supabase/server";
 import type { Database } from "@/lib/supabase/database.types";
+import { asLayout } from "@/lib/tasks";
 
 type Tables = Database["public"]["Tables"];
 export type Team = Tables["teams"]["Row"];
@@ -14,7 +15,11 @@ export type Entry = Tables["attendance_entries"]["Row"];
 export type LinkRow = Tables["links"]["Row"];
 export type Integration = Tables["integrations"]["Row"];
 export type Notice = Tables["notices"]["Row"];
-export type Task = Tables["tasks"]["Row"] & { task_completions: { member_id: number }[] };
+export type ChecklistItem = Pick<Tables["task_checklist_items"]["Row"], "id" | "text" | "position" | "done">;
+export type Task = Tables["tasks"]["Row"] & {
+  task_completions: { member_id: number }[];
+  task_checklist_items: ChecklistItem[];
+};
 export type AttendanceStatus = "present" | "late" | "absent";
 
 export type Permissions = {
@@ -137,13 +142,29 @@ export async function getTasks(teamId: number) {
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("tasks")
-    .select("*, task_completions(member_id)")
+    .select("*, task_completions(member_id), task_checklist_items(id, text, position, done)")
     .eq("team_id", teamId)
     .or(`status.eq.open,done_at.gte.${weekAgo}`)
     .order("due_on", { ascending: true, nullsFirst: false })
     .limit(300);
   if (error) throw error;
   return data ?? [];
+}
+
+/** My board placements (lane + order) for this team's tasks. Private to me by RLS. */
+export async function getTaskLanes(teamId: number) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("task_lanes").select("task_id, lane, position").eq("team_id", teamId);
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** My chosen task layout ("list" when I never picked one). */
+export async function getTaskLayout() {
+  const supabase = await createClient();
+  const { data, error } = await supabase.from("user_settings").select("task_layout").maybeSingle();
+  if (error) throw error;
+  return asLayout(data?.task_layout);
 }
 
 /** Notices still on the board (not past their expiry date); RLS hides handover notes from non-role-holders. */

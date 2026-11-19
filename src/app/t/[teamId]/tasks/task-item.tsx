@@ -1,8 +1,16 @@
 import type { Task } from "@/lib/data";
 import { strings } from "@/lib/strings";
-import { bucketOf, canToggle, dueLabel, isTeamWide } from "@/lib/tasks";
-import { setCompletion, setTaskDone, updateTask } from "../actions";
+import { bucketOf, canToggle, checklistAccess, dueLabel, isTeamWide, sortSteps } from "@/lib/tasks";
+import {
+  addChecklistSteps,
+  removeChecklistStep,
+  setChecklistStepDone,
+  setCompletion,
+  setTaskDone,
+  updateTask,
+} from "../actions";
 import { EditTask } from "./edit-task";
+import { TaskChecklist } from "./task-checklist";
 import { TaskRow } from "./task-row";
 import { TeamWideTaskRow } from "./team-wide-task-row";
 
@@ -12,6 +20,8 @@ export type TaskContext = {
   myId: number | null;
   canCommand: boolean;
   members: { id: number; name: string }[];
+  /** Tasks I keep "in progress" on my personal board. */
+  doingIds?: number[];
 };
 
 /** One task in a list: a per-cadet row for open team-wide tasks, a plain row otherwise. */
@@ -22,6 +32,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
   // Remount when the task opens/closes; completions resync inside the row without remounting.
   const key = `${task.id}-${task.status}`;
   const isTeam = task.visibility === "team";
+  const doing = (ctx.doingIds ?? []).includes(task.id);
   // Mirrors RLS: command edits team tasks; private tasks are only ever visible to their owner.
   const canEdit = task.status === "open" && (isTeam ? ctx.canCommand : true);
   const editor = canEdit ? (
@@ -37,6 +48,17 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
       members={ctx.members}
     />
   ) : null;
+  const checklist = (
+    <TaskChecklist
+      title={task.title}
+      steps={sortSteps(task.task_checklist_items ?? [])}
+      access={checklistAccess(task, ctx.myId, ctx.canCommand)}
+      taskOpen={task.status === "open"}
+      setDone={setChecklistStepDone.bind(null, ctx.teamId)}
+      remove={removeChecklistStep.bind(null, ctx.teamId)}
+      add={addChecklistSteps.bind(null, ctx.teamId, task.id)}
+    />
+  );
 
   if (isTeamWide(task) && task.status === "open") {
     return (
@@ -52,6 +74,8 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
         canCommand={ctx.canCommand}
         setCompletion={setCompletion.bind(null, ctx.teamId, task.id)}
         closeTask={setTaskDone.bind(null, ctx.teamId, task.id)}
+        doing={doing}
+        checklist={checklist}
         editor={editor}
       />
     );
@@ -75,6 +99,8 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
       done={task.status === "done"}
       canToggle={canToggle(task, ctx.myId, ctx.canCommand)}
       toggle={setTaskDone.bind(null, ctx.teamId, task.id)}
+      doing={doing}
+      checklist={checklist}
       editor={editor}
     />
   );

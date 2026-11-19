@@ -1,13 +1,29 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronDown, Plus, Trash2 } from "lucide-react";
-import { fullName, getTasks, getTeamContext, type Task } from "@/lib/data";
+import { fullName, getTaskLanes, getTaskLayout, getTasks, getTeamContext, type Task } from "@/lib/data";
 import { strings } from "@/lib/strings";
-import { BUCKETS, bucketOf, byDue, doneForMe, isMine } from "@/lib/tasks";
+import {
+  BUCKETS,
+  LANES,
+  bucketOf,
+  byDue,
+  byPlacement,
+  canToggle,
+  doneForMe,
+  dueLabel,
+  isMine,
+  isTeamWide,
+  laneOf,
+  type Lane,
+} from "@/lib/tasks";
 import { ActionButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
-import { createTask, deleteTask } from "../actions";
+import { createTask, deleteTask, moveTask, setTaskLayout } from "../actions";
+import { DayView } from "./day-view";
+import { LayoutSwitch } from "./layout-switch";
 import { NewTaskForm } from "./new-task-form";
+import { TaskBoard, type BoardCard } from "./task-board";
 import { TaskItem, type TaskContext } from "./task-item";
 
 const s = strings.tasks;
@@ -23,7 +39,13 @@ async function Tasks({
   const teamId = Number((await params).teamId);
   const requested = (await searchParams).view;
   const view: View = requested === "team" || requested === "private" ? requested : "mine";
-  const [ctx, tasks] = await Promise.all([getTeamContext(teamId), getTasks(teamId)]);
+  const [ctx, tasks, placementRows, layout] = await Promise.all([
+    getTeamContext(teamId),
+    getTasks(teamId),
+    getTaskLanes(teamId),
+    getTaskLayout(),
+  ]);
+  const placements = new Map(placementRows.map((p) => [p.task_id, p]));
   const canCommand = ctx.permissions.can_command;
   const myId = ctx.me?.id ?? null;
 
@@ -42,8 +64,84 @@ async function Tasks({
     myId,
     canCommand,
     members: ctx.roster.map((m) => ({ id: m.id, name: fullName(m) })),
+    doingIds: placementRows.filter((p) => p.lane === "doing").map((p) => p.task_id),
   };
   const row = (t: Task) => <TaskItem key={t.id} task={t} ctx={taskCtx} />;
+
+  const list =
+    open.length === 0 ? (
+      <p className="mt-6 text-base text-ink-2">{view === "mine" ? s.emptyMine : s.empty}</p>
+    ) : (
+      BUCKETS.map((b) => {
+        const items = open.filter((t) => bucketOf(t, ctx.today) === b);
+        if (items.length === 0) return null;
+        return (
+          <section key={b} className="mt-6">
+            <h2 className={`mb-1 text-base font-extrabold ${b === "overdue" ? "text-absent-ink" : ""}`}>
+              {s.groups[b]} <span className="text-sm font-medium text-ink-2">{items.length}</span>
+            </h2>
+            <ul className="divide-y divide-rule border-y border-rule">{items.map(row)}</ul>
+          </section>
+        );
+      })
+    );
+
+  // Finished in the last week; the board shows these in its own "done" lane.
+  const doneSection = done.length > 0 ? (
+        <details className="group mt-6">
+          <summary className="flex h-11 cursor-pointer list-none items-center gap-1 text-base font-extrabold [&::-webkit-details-marker]:hidden">
+            {s.done} <span className="text-sm font-medium text-ink-2">{done.length}</span>
+            <ChevronDown aria-hidden size={18} className="text-ink-2 transition-transform group-open:rotate-180" />
+          </summary>
+          <ul className="divide-y divide-rule border-y border-rule">{done.map(row)}</ul>
+        </details>
+      ) : null;
+
+  // Personal views apply to my own tasks; the whole-team view stays a list.
+  const personal = view !== "team";
+  let panes = null;
+  if (personal) {
+    const memberName = (id: number | null) => taskCtx.members.find((m) => m.id === id)?.name ?? "";
+    const cards: BoardCard[] = visible.map((t) => {
+      const wide = isTeamWide(t);
+      return {
+        id: t.id,
+        title: t.title,
+        notes: t.notes,
+        due: dueLabel(t, ctx.today),
+        overdue: bucketOf(t, ctx.today) === "overdue",
+        who: t.visibility === "private" ? "" : wide ? s.everyone : memberName(t.assignee_member_id),
+        isPrivate: t.visibility === "private",
+        progress: wide
+          ? s.progress(
+              t.task_completions.filter((c) => taskCtx.members.some((m) => m.id === c.member_id)).length,
+              taskCtx.members.length,
+            )
+          : "",
+        steps: t.task_checklist_items.length
+          ? s.steps(t.task_checklist_items.filter((x) => x.done).length, t.task_checklist_items.length)
+          : "",
+        teamWide: wide,
+        // Team-wide: my own part, while the task is open. Otherwise: who may tick it.
+        canFinish: wide ? myId !== null && t.status === "open" : canToggle(t, myId, canCommand),
+      };
+    });
+    const columns = Object.fromEntries(LANES.map((l) => [l, [] as number[]])) as Record<Lane, number[]>;
+    const ordered = [...visible].sort(byPlacement(placements));
+    for (const t of ordered) columns[laneOf(t, myId, placements.get(t.id))].push(t.id);
+    // Finished cards: most recently done first.
+    const doneAt = (t: Task) => t.done_at ?? t.created_at;
+    columns.done = visible
+      .filter((t) => columns.done.includes(t.id))
+      .sort((a, b) => (doneAt(a) < doneAt(b) ? 1 : -1))
+      .map((t) => t.id);
+
+    panes = {
+      list,
+      board: <TaskBoard cards={cards} columns={columns} myId={myId} move={moveTask.bind(null, teamId)} />,
+      days: <DayView tasks={open} today={ctx.today} row={row} />,
+    };
+  }
 
   return (
     <>
@@ -80,32 +178,17 @@ async function Tasks({
         ))}
       </nav>
 
-      {open.length === 0 ? (
-        <p className="mt-6 text-base text-ink-2">{view === "mine" ? s.emptyMine : s.empty}</p>
+      {panes ? (
+        <LayoutSwitch initial={layout} save={setTaskLayout} panes={panes} afterList={doneSection} />
       ) : (
-        BUCKETS.map((b) => {
-          const items = open.filter((t) => bucketOf(t, ctx.today) === b);
-          if (items.length === 0) return null;
-          return (
-            <section key={b} className="mt-6">
-              <h2 className={`mb-1 text-base font-extrabold ${b === "overdue" ? "text-absent-ink" : ""}`}>
-                {s.groups[b]} <span className="text-sm font-medium text-ink-2">{items.length}</span>
-              </h2>
-              <ul className="divide-y divide-rule border-y border-rule">{items.map(row)}</ul>
-            </section>
-          );
-        })
+        <>
+          <p className="mt-3 text-xs text-ink-2">{s.teamIsList}</p>
+          {list}
+          {doneSection}
+        </>
       )}
 
-      {done.length > 0 ? (
-        <details className="group mt-6">
-          <summary className="flex h-11 cursor-pointer list-none items-center gap-1 text-base font-extrabold [&::-webkit-details-marker]:hidden">
-            {s.done} <span className="text-sm font-medium text-ink-2">{done.length}</span>
-            <ChevronDown aria-hidden size={18} className="text-ink-2 transition-transform group-open:rotate-180" />
-          </summary>
-          <ul className="divide-y divide-rule border-y border-rule">{done.map(row)}</ul>
-        </details>
-      ) : null}
+
 
       {deletable.length > 0 ? (
         <div className="mt-10">

@@ -229,7 +229,7 @@ try {
   const todayIso = new Date().toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
   const tomorrowIso = new Date(Date.now() + 86_400_000).toLocaleDateString("en-CA", { timeZone: "Asia/Jerusalem" });
   await a.goto(`${BASE}/t/${teamId}/tasks`);
-  const newTask = async ({ title, team, assignee, due, time }) => {
+  const newTask = async ({ title, team, assignee, due, time, steps }) => {
     await a.locator("summary", { hasText: "משימה חדשה" }).click();
     const form = a.locator("form", { has: a.getByRole("button", { name: "הוספה", exact: true }) });
     await form.getByLabel("מה צריך לעשות").fill(title);
@@ -237,10 +237,21 @@ try {
     if (team && assignee) await form.getByLabel("מבצע/ת").selectOption({ label: assignee });
     if (due) await form.getByLabel("תאריך יעד").fill(due);
     if (time) await form.getByLabel("שעה").fill(time);
+    if (steps) {
+      await form.getByRole("button", { name: "פירוק לשלבים" }).click();
+      await form.getByLabel("שלבים (לא חובה)").fill(steps.join("\n"));
+    }
     await form.getByRole("button", { name: "הוספה", exact: true }).click();
     await a.locator("summary", { hasText: "משימה חדשה" }).click(); // close
   };
-  await newTask({ title: "להגיש סיכום שיעור", team: true, assignee: "תמר גולן", due: todayIso, time: "14:00" });
+  await newTask({
+    title: "להגיש סיכום שיעור",
+    team: true,
+    assignee: "תמר גולן",
+    due: todayIso,
+    time: "14:00",
+    steps: ["1. לאסוף סיכומים", "2. לכתוב טיוטה", "3. להגיש"],
+  });
   await newTask({ title: "למלא משוב קורס", team: true, due: tomorrowIso });
   await newTask({ title: "להתקשר הביתה", team: false, due: todayIso });
   await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
@@ -248,6 +259,22 @@ try {
   await a.getByText("למלא משוב קורס").first().waitFor();
   await a.screenshot({ path: `${OUT}/tasks.png`, fullPage: true });
   step("A created two team tasks and a private one");
+
+  // Personal views (issue #1): board layout, move a card with the one-thumb button, then back to list.
+  await a.goto(`${BASE}/t/${teamId}/tasks`);
+  await a.getByRole("radio", { name: "לוח" }).click();
+  await a.locator('[data-lane="todo"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.getByRole("button", { name: 'העברת "להתקשר הביתה" אל בתהליך' }).click();
+  await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.reload();
+  if ((await a.getByRole("radio", { name: "לוח" }).getAttribute("aria-checked")) !== "true") fail("task layout not remembered");
+  await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.screenshot({ path: `${OUT}/tasks-board.png`, fullPage: true });
+  await a.getByRole("radio", { name: "רשימה" }).click();
+  await a.getByText("בתהליך", { exact: true }).first().waitFor(); // the list tags it too
+  await a.waitForTimeout(500); // let the layout save before navigating
+  await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
+  step("A moved a task to in progress on their board; layout remembered");
 
   // Edit a team task's text and time.
   await a.getByRole("button", { name: "עריכת המשימה: להגיש סיכום שיעור" }).first().click();
@@ -258,6 +285,19 @@ try {
   await a.getByText("להגיש סיכום שיעור מתוקן").first().waitFor();
   await a.getByText("היום 15:00").first().waitFor();
   step("A edited a team task (text and time)");
+
+  // Checklist: the steps were saved in order (numbering stripped); A adds and removes one.
+  const summaryRow = a.locator("li", { has: a.getByRole("checkbox", { name: /להגיש סיכום שיעור מתוקן/ }) }).first();
+  await summaryRow.getByRole("button", { name: /0\/3 שלבים/ }).click();
+  const stepNames = await summaryRow.getByRole("checkbox", { name: /^סימון השלב/ }).allInnerTexts();
+  if (stepNames.join("|") !== "לאסוף סיכומים|לכתוב טיוטה|להגיש") fail(`steps out of order: ${stepNames.join("|")}`);
+  await summaryRow.getByPlaceholder("שלב חדש").fill("לבדוק שגיאות");
+  await summaryRow.getByRole("button", { name: "הוספת שלב" }).click();
+  await summaryRow.getByText("0/4 שלבים").waitFor();
+  await summaryRow.getByRole("button", { name: "מחיקת שלבים" }).click();
+  await summaryRow.getByRole("button", { name: "מחיקת השלב: לבדוק שגיאות" }).click();
+  await summaryRow.getByText("0/3 שלבים").waitFor();
+  step("A broke a task into steps (3 from the form, +1 added, 1 removed)");
 
   await a.goto(`${BASE}/t/${teamId}`);
   await a.getByText("המשימות שלי להיום").first().waitFor();
@@ -321,6 +361,17 @@ try {
   await b.locator("summary", { hasText: "משימה חדשה" }).click();
   if (await b.getByText("משימת צוות", { exact: true }).count()) fail("B (no role) is offered a team task");
   await b.locator("summary", { hasText: "משימה חדשה" }).click();
+  // Checklist: B (the assignee) ticks a step but can't add or remove steps.
+  const bRow = b.locator("li", { has: bTask }).first();
+  await bRow.getByRole("button", { name: /0\/3 שלבים/ }).click();
+  await bRow.getByRole("checkbox", { name: "סימון השלב כבוצע: לאסוף סיכומים" }).click();
+  await bRow.getByText("1/3 שלבים").waitFor();
+  if (await bRow.getByRole("button", { name: "הוספת שלב" }).count()) fail("B (assignee) can add steps");
+  if (await bRow.getByRole("button", { name: "מחיקת שלבים" }).count()) fail("B (assignee) can remove steps");
+  await b.waitForTimeout(800);
+  await b.reload();
+  await b.locator("li", { has: bTask }).first().getByText("1/3 שלבים").waitFor();
+  step("B ticks a step of their task (1/3, persisted), cannot add or remove steps");
   // Team-wide task: B marks their own part, and can't mark anyone else.
   await b.getByRole("checkbox", { name: /סימון החלק שלי כבוצע: למלא משוב קורס/ }).click();
   await b.getByText("1/13 סיימו").first().waitFor();
