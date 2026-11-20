@@ -253,7 +253,7 @@ try {
     steps: ["1. לאסוף סיכומים", "2. לכתוב טיוטה", "3. להגיש"],
   });
   await newTask({ title: "למלא משוב קורס", team: true, due: tomorrowIso });
-  await newTask({ title: "להתקשר הביתה", team: false, due: todayIso });
+  await newTask({ title: "להתקשר הביתה", team: false, due: todayIso, steps: ["לבדוק מתי נוח", "להתקשר"] });
   await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
   await a.getByText("להגיש סיכום שיעור").first().waitFor();
   await a.getByText("למלא משוב קורס").first().waitFor();
@@ -264,17 +264,30 @@ try {
   await a.goto(`${BASE}/t/${teamId}/tasks`);
   await a.getByRole("radio", { name: "לוח" }).click();
   await a.locator('[data-lane="todo"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  const laneSaved = a.waitForResponse((r) => r.request().method() === "POST");
   await a.getByRole("button", { name: 'העברת "להתקשר הביתה" אל בתהליך' }).click();
   await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await laneSaved; // reload only after the move is saved
   await a.reload();
   if ((await a.getByRole("radio", { name: "לוח" }).getAttribute("aria-checked")) !== "true") fail("task layout not remembered");
   await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
   await a.screenshot({ path: `${OUT}/tasks-board.png`, fullPage: true });
+  step("A moved a task to in progress on their board; layout remembered");
+  // Checklists work on board cards too: tick and add steps without lifting the card.
+  const boardCard = a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" });
+  await boardCard.getByRole("button", { name: /0\/2 שלבים/ }).click();
+  await boardCard.getByRole("checkbox", { name: "סימון השלב כבוצע: לבדוק מתי נוח" }).click();
+  await boardCard.getByText("1/2 שלבים").waitFor();
+  await boardCard.getByPlaceholder("שלב חדש").fill("לספר על השבוע");
+  await boardCard.getByRole("button", { name: "הוספת שלב" }).click();
+  await boardCard.getByText("1/3 שלבים").waitFor();
+  await a.reload();
+  await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).getByText("1/3 שלבים").waitFor();
+  step("board card: steps ticked and added in place (1/3, persisted, card stays in progress)");
   await a.getByRole("radio", { name: "רשימה" }).click();
   await a.getByText("בתהליך", { exact: true }).first().waitFor(); // the list tags it too
   await a.waitForTimeout(500); // let the layout save before navigating
   await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
-  step("A moved a task to in progress on their board; layout remembered");
 
   // Edit a team task's text and time.
   await a.getByRole("button", { name: "עריכת המשימה: להגיש סיכום שיעור" }).first().click();
