@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { ChevronDown, Download, Trash2 } from "lucide-react";
 import { fullName, getCalendars, getTeamContext } from "@/lib/data";
 import { calendarAccess, calendarAccountEmail } from "@/lib/google-calendar";
@@ -46,7 +47,17 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
     <>
       <h1 className="sr-only">{s.title}</h1>
 
-      <Section title={s.roster} aside={<span className="text-base font-bold text-ink-2">{ctx.roster.length}</span>}>
+      <Section
+        title={s.roster}
+        aside={
+          <span className="flex items-center gap-3">
+            <Link href={`/t/${teamId}/team/names`} className="inline-flex min-h-11 items-center text-sm font-bold underline">
+              {strings.names.open}
+            </Link>
+            <span className="text-base font-bold text-ink-2">{ctx.roster.length}</span>
+          </span>
+        }
+      >
         <ul className="divide-y divide-rule border-y border-rule">
           {ctx.roster.map((m) => {
             const isMe = ctx.me?.id === m.id;
@@ -54,6 +65,7 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
               <div className="min-w-0 flex-1">
                 <p className="truncate text-base font-bold">
                   {fullName(m)}
+                  {m.nickname ? <span className="ms-1.5 font-normal text-ink-2">({m.nickname})</span> : null}
                   {isMe ? <span className="ms-1.5 text-xs font-normal text-ink-2">· {strings.common.you}</span> : null}
                 </p>
                 <p className="flex flex-wrap gap-x-2 text-xs text-ink-2">
@@ -88,6 +100,13 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
                           <Field label={strings.join.firstName} name="first_name" defaultValue={m.first_name} required maxLength={40} />
                           <Field label={strings.join.lastName} name="last_name" defaultValue={m.last_name} maxLength={40} />
                         </div>
+                        <Field
+                          label={s.nickname}
+                          hint={s.nicknameHint}
+                          name="nickname"
+                          defaultValue={m.nickname ?? ""}
+                          maxLength={40}
+                        />
                         <SubmitButton variant="outline">{s.editName}</SubmitButton>
                       </ActionForm>
                     ) : null}
