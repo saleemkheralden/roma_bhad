@@ -69,6 +69,8 @@ export const strings = {
   company: {
     title: "פלוגה",
     dashboard: "לוח הפלוגה",
+    myTeams: "הצוותים שלי",
+    backToTeam: (name: string) => `לצוות ${name}`,
     teams: "צוותים",
     noTeams: "עוד אין צוותים בפלוגה. אחראי/ת צוות מחבר/ת את הצוות עם קוד הפלוגה.",
     onDuty: "בתפקיד היום בפלוגה",
