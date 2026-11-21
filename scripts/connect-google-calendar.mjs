@@ -1,5 +1,5 @@
-// One-time: let Roma read calendars as Roma's Google account (e.g. the roma Gmail account).
-// Opens Google in the browser; sign in AS THAT ACCOUNT and allow "View your calendars" (read-only).
+// One-time: let Roma read calendars and sheets as Roma's Google account (e.g. the roma Gmail account).
+// Opens Google in the browser; sign in AS THAT ACCOUNT and allow "View your calendars" and "See your Google Sheets spreadsheets" (both read-only).
 // Saves GOOGLE_OAUTH_CLIENT_ID / _SECRET, GOOGLE_CALENDAR_REFRESH_TOKEN and GOOGLE_CALENDAR_ACCOUNT
 // to .env.local, and with --vercel also to Vercel (production + preview). Never prints secrets.
 //
@@ -10,7 +10,11 @@ import { createHash, randomBytes } from "node:crypto";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 
-const SCOPE = "https://www.googleapis.com/auth/calendar.readonly";
+// Read-only: calendars (titles and times) and sheets (cell values) shared with Roma's account.
+const SCOPE = [
+  "https://www.googleapis.com/auth/calendar.readonly",
+  "https://www.googleapis.com/auth/spreadsheets.readonly",
+].join(" ");
 const [path, flag] = process.argv.slice(2);
 if (!path) {
   console.error("usage: node scripts/connect-google-calendar.mjs <client_secret.json> [--vercel]");
@@ -112,7 +116,7 @@ env = env
   .filter((line) => !/^(GOOGLE_OAUTH_CLIENT_ID|GOOGLE_OAUTH_CLIENT_SECRET|GOOGLE_CALENDAR_REFRESH_TOKEN|GOOGLE_CALENDAR_ACCOUNT)=/.test(line))
   .join("\n")
   .replace(/\n*$/, "\n");
-env += `\n# Roma's Google account for reading team calendars (read-only). Never commit.\n${Object.entries(values)
+env += `\n# Roma's Google account for reading team calendars and sheets (read-only). Never commit.\n${Object.entries(values)
   .map(([k, v]) => `${k}=${v}`)
   .join("\n")}\n`;
 writeFileSync(envPath, env);
