@@ -162,6 +162,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 ### Phase 5: Scale
 - [ ] Company level: a company holds teams; company dashboard
 - [ ] Guard/security-team rotation with fairness points and blocked-out dates
-- [ ] Offline support for roll call (service worker + sync queue)
+- [x] Offline roll call: every mark is queued on the phone (localStorage) and sent in order; with no reception it waits and is sent when the connection returns (survives a reload)
+- [ ] Offline app shell (open Roma with no reception) via the service worker, after #11 merges
 - [ ] Export all data, then delete it all (end of course)
 - [ ] Onboarding for other teams

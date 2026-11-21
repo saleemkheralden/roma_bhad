@@ -1,11 +1,13 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Check, ChevronRight, Copy } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { strings } from "@/lib/strings";
 import { summaryText, tally, type Mark, type Status } from "@/lib/attendance";
+import { enqueue, isNetworkError, loadQueue, pendingFor, removeOp, type QueuedOp } from "@/lib/offline-queue";
 import { Button, ErrorText } from "@/components/ui";
 import { buttonClass } from "@/components/button-class";
 import { TallyBar } from "@/components/section";
@@ -65,34 +67,108 @@ export function RollCall({
   backHref: string;
   doneHref: string;
 }) {
+  const router = useRouter();
   const [marks, setMarks] = useState(() => new Map<number, Mark>(Object.entries(initial).map(([k, v]) => [Number(k), v])));
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [deleting, startDelete] = useTransition();
   const reasonTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  // Marks saved on this phone but not yet on the server (no reception).
+  const [pending, setPending] = useState(0);
+  const [synced, setSynced] = useState(false);
+  const flushing = useRef(false);
   // Bumped per cell on each change: the flip plays on change only, never on first render.
   const [flips, setFlips] = useState<Record<number, number>>({});
   const bump = (ids: number[]) =>
     setFlips((f) => ({ ...f, ...Object.fromEntries(ids.map((id) => [id, (f[id] ?? 0) + 1])) }));
   const t = tally(marks, roster.length);
 
-  async function persist(memberId: number, mark: Mark | null, previous: Mark | undefined) {
-    const db = createClient();
-    const { error } = mark
-      ? await db.from("attendance_entries").upsert(
-          { session_id: sessionId, team_id: teamId, member_id: memberId, status: mark.status, reason: mark.reason || null },
-          { onConflict: "session_id,member_id" },
-        )
-      : await db.from("attendance_entries").delete().eq("session_id", sessionId).eq("member_id", memberId);
-    if (error) {
-      setError(a.saveFailed);
-      setMarks((m) => {
-        const copy = new Map(m);
-        if (previous) copy.set(memberId, previous);
-        else copy.delete(memberId);
-        return copy;
+  const store = () => (typeof window === "undefined" ? undefined : window.localStorage);
+  const countMine = (ops: QueuedOp[]) => ops.filter((o) => o.sessionId === sessionId).length;
+
+  // Sends queued marks for this roll call, oldest change first. Stops at the first network error.
+  const flush = useCallback(async () => {
+    if (flushing.current) return;
+    flushing.current = true;
+    try {
+      const db = createClient();
+      let hadOffline = false;
+      const sent = new Set<string>(); // guards against a loop if storage can't be written
+      // Keep going until the queue is empty: marks tapped while we were sending join this run.
+      for (;;) {
+        const batch = loadQueue(store()).filter(
+          (o) => o.sessionId === sessionId && !sent.has(`${o.memberId}:${o.at}`),
+        );
+        if (batch.length === 0 || hadOffline) break;
+        for (const op of batch) {
+          const { error } = op.mark
+            ? await db.from("attendance_entries").upsert(
+                { session_id: op.sessionId, team_id: op.teamId, member_id: op.memberId, status: op.mark.status, reason: op.mark.reason || null },
+                { onConflict: "session_id,member_id" },
+              )
+            : await db.from("attendance_entries").delete().eq("session_id", op.sessionId).eq("member_id", op.memberId);
+          if (error && isNetworkError(error, navigator.onLine)) {
+            hadOffline = true;
+            break;
+          }
+          sent.add(`${op.memberId}:${op.at}`);
+          removeOp(store(), op);
+          if (error) {
+            // Refused by the server (e.g. no permission any more): drop it and resync.
+            setError(a.saveFailed);
+            router.refresh();
+          }
+        }
+      }
+      const left = countMine(loadQueue(store()));
+      setPending((before) => {
+        if (before > 0 && left === 0 && !hadOffline) {
+          setSynced(true);
+          setTimeout(() => setSynced(false), 3000);
+        }
+        return left;
       });
+    } finally {
+      flushing.current = false;
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  // On open: show marks still waiting on this phone, then try to send them.
+  useEffect(() => {
+    const mine = pendingFor(loadQueue(store()), sessionId);
+    // Deferred out of the effect body (no cascading render), then try to send.
+    void Promise.resolve().then(() => {
+      if (mine.size) {
+        setMarks((m) => {
+          const copy = new Map(m);
+          for (const [memberId, mark] of mine) {
+            if (mark) copy.set(memberId, mark);
+            else copy.delete(memberId);
+          }
+          return copy;
+        });
+        setPending(mine.size);
+      }
+      return flush();
+    });
+    const onOnline = () => void flush();
+    window.addEventListener("online", onOnline);
+    const timer = setInterval(() => {
+      if (countMine(loadQueue(store())) > 0 && navigator.onLine) void flush();
+    }, 10_000);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [flush, sessionId]);
+
+  /** Every write goes through the queue, so order is kept even across lost reception. */
+  function persist(memberId: number, mark: Mark | null) {
+    const ops = enqueue(store(), { sessionId, teamId, memberId, mark: mark ? { status: mark.status, reason: mark.reason } : null });
+    setPending(countMine(ops));
+    void flush();
   }
 
   function cycle(memberId: number) {
@@ -108,10 +184,10 @@ export function RollCall({
       return copy;
     });
     bump([memberId]);
-    void persist(memberId, mark, previous);
+    persist(memberId, mark);
   }
 
-  async function markRestPresent() {
+  function markRestPresent() {
     setError(null);
     const rest = roster.filter((p) => !marks.has(p.id));
     if (rest.length === 0) return;
@@ -121,20 +197,12 @@ export function RollCall({
       return copy;
     });
     bump(rest.map((p) => p.id));
-    const { error } = await createClient()
-      .from("attendance_entries")
-      .upsert(
-        rest.map((p) => ({ session_id: sessionId, team_id: teamId, member_id: p.id, status: "present" })),
-        { onConflict: "session_id,member_id" },
-      );
-    if (error) {
-      setError(a.saveFailed);
-      setMarks((m) => {
-        const copy = new Map(m);
-        rest.forEach((p) => copy.delete(p.id));
-        return copy;
-      });
-    }
+    let ops: QueuedOp[] = [];
+    rest.forEach((p) => {
+      ops = enqueue(store(), { sessionId, teamId, memberId: p.id, mark: { status: "present", reason: null } });
+    });
+    setPending(countMine(ops));
+    void flush();
   }
 
   function setReason(memberId: number, reason: string) {
@@ -144,7 +212,7 @@ export function RollCall({
     setMarks((m) => new Map(m).set(memberId, mark));
     const timers = reasonTimers.current;
     clearTimeout(timers.get(memberId));
-    timers.set(memberId, setTimeout(() => void persist(memberId, mark, current), 600));
+    timers.set(memberId, setTimeout(() => persist(memberId, mark), 600));
   }
 
   async function copySummary() {
@@ -222,6 +290,15 @@ export function RollCall({
         })}
       </ul>
 
+      {pending > 0 ? (
+        <p role="status" className="mt-3 rounded-[var(--radius-cell)] bg-now-wash px-3 py-2 text-sm font-bold text-now-ink">
+          {a.offlinePending(pending)}
+        </p>
+      ) : synced ? (
+        <p role="status" className="mt-3 text-sm font-bold text-present-ink">
+          {a.offlineSynced}
+        </p>
+      ) : null}
       <div className="mt-3">
         <ErrorText>{error}</ErrorText>
       </div>
