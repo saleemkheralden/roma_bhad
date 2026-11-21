@@ -194,6 +194,18 @@ export async function getCalendars(teamId: number) {
   return data ?? [];
 }
 
+export async function getSheets(teamId: number) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("integrations")
+    .select("*")
+    .eq("team_id", teamId)
+    .eq("kind", "gsheet")
+    .order("created_at");
+  if (error) throw error;
+  return data ?? [];
+}
+
 export async function getLinks(teamId: number) {
   const supabase = await createClient();
   const { data, error } = await supabase
