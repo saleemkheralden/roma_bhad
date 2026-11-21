@@ -69,6 +69,92 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"companies": {
+                  Row: {
+                    "created_at": string,"created_by": string | null,"id": number,"invite_code": string,"name": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code": string,"name": string
+                  }
+                  Update: {
+                    "created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code"?: string,"name"?: string
+                  }
+                  Relationships: [
+                    
+                  ]
+                },"company_members": {
+                  Row: {
+                    "company_id": number,"created_at": string,"display_name": string,"id": number,"is_admin": boolean,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": number,"created_at"?: string,"display_name": string,"id"?: never,"is_admin"?: boolean,"user_id": string
+                  }
+                  Update: {
+                    "company_id"?: number,"created_at"?: string,"display_name"?: string,"id"?: never,"is_admin"?: boolean,"user_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "company_members_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"company_role_assignments": {
+                  Row: {
+                    "company_id": number,"created_at": string,"end_date": string,"id": number,"member_id": number,"role_id": number,"start_date": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": number,"created_at"?: string,"end_date": string,"id"?: never,"member_id": number,"role_id": number,"start_date": string
+                  }
+                  Update: {
+                    "company_id"?: number,"created_at"?: string,"end_date"?: string,"id"?: never,"member_id"?: number,"role_id"?: number,"start_date"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "company_role_assignments_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "company_role_assignments_member_id_company_id_fkey"
+      columns: ["member_id","company_id"]
+isOneToOne: false
+      referencedRelation: "company_members"
+      referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "company_role_assignments_role_id_company_id_fkey"
+      columns: ["role_id","company_id"]
+isOneToOne: false
+      referencedRelation: "company_roles"
+      referencedColumns: ["id","company_id"]
+    }
+                  ]
+                },"company_roles": {
+                  Row: {
+                    "company_id": number,"id": number,"is_command": boolean,"name": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "company_id": number,"id"?: never,"is_command"?: boolean,"name": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "company_id"?: number,"id"?: never,"is_command"?: boolean,"name"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "company_roles_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"integrations": {
                   Row: {
                     "created_at": string,"created_by": string | null,"external_id": string,"id": number,"kind": string,"label": string,"team_id": number
@@ -128,6 +214,20 @@ isOneToOne: false
       referencedRelation: "teams"
       referencedColumns: ["id"]
     }
+                  ]
+                },"push_subscriptions": {
+                  Row: {
+                    "auth": string,"created_at": string,"endpoint": string,"id": number,"p256dh": string,"user_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "auth": string,"created_at"?: string,"endpoint": string,"id"?: never,"p256dh": string,"user_id"?: string
+                  }
+                  Update: {
+                    "auth"?: string,"created_at"?: string,"endpoint"?: string,"id"?: never,"p256dh"?: string,"user_id"?: string
+                  }
+                  Relationships: [
+                    
                   ]
                 },"role_assignments": {
                   Row: {
@@ -295,17 +395,23 @@ isOneToOne: false
                   ]
                 },"teams": {
                   Row: {
-                    "created_at": string,"created_by": string | null,"id": number,"invite_code": string,"name": string
+                    "company_id": number | null,"created_at": string,"created_by": string | null,"id": number,"invite_code": string,"name": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code": string,"name": string
+                    "company_id"?: number | null,"created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code": string,"name": string
                   }
                   Update: {
-                    "created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code"?: string,"name"?: string
+                    "company_id"?: number | null,"created_at"?: string,"created_by"?: string | null,"id"?: never,"invite_code"?: string,"name"?: string
                   }
                   Relationships: [
-                    
+                    {
+      foreignKeyName: "teams_company_id_fkey"
+      columns: ["company_id"]
+isOneToOne: false
+      referencedRelation: "companies"
+      referencedColumns: ["id"]
+    }
                   ]
                 },"user_settings": {
                   Row: {
@@ -327,11 +433,23 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "create_team":
+            "company_dashboard":
+{ Args: { "p_company_id": number }; Returns: Json
+                           },
+"create_company":
+{ Args: { "p_display_name": string,"p_name": string,"p_team_id"?: number }; Returns: number
+                           },
+"create_team":
 { Args: { "p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
+                           },
+"join_company":
+{ Args: { "p_code": string,"p_display_name": string }; Returns: number
                            },
 "join_team":
 { Args: { "p_code": string,"p_first_name"?: string,"p_last_name"?: string,"p_member_id"?: number }; Returns: number
+                           },
+"link_team_to_company":
+{ Args: { "p_code": string,"p_team_id": number }; Returns: number
                            },
 "my_permissions":
 { Args: { "p_team_id": number }; Returns: Json
@@ -339,8 +457,14 @@ isOneToOne: false
 "ping":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"preview_company":
+{ Args: { "p_code": string }; Returns: Json
+                           },
 "preview_team":
 { Args: { "p_code": string }; Returns: Json
+                           },
+"regenerate_company_code":
+{ Args: { "p_company_id": number }; Returns: string
                            },
 "regenerate_invite_code":
 { Args: { "p_team_id": number }; Returns: string

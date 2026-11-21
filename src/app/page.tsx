@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getMyTeams } from "@/lib/data";
+import { getMyCompanies } from "@/lib/company-data";
 import { strings } from "@/lib/strings";
 import { buttonClass } from "@/components/button-class";
 import { BoardHeader } from "@/components/board";
@@ -9,8 +10,9 @@ import { BoardHeader } from "@/components/board";
 const s = strings.onboarding;
 
 async function HomeRedirect() {
-  const teams = await getMyTeams();
+  const [teams, companies] = await Promise.all([getMyTeams(), getMyCompanies()]);
   if (teams.length > 0) redirect(`/t/${teams[0].id}`);
+  if (companies.length > 0) redirect(`/c/${companies[0].id}`);
   return (
     <section className="mx-auto w-full max-w-md px-4 py-8">
       <h1 className="text-2xl font-extrabold">{s.title}</h1>
