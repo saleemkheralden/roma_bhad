@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition, type ReactNode } from "react";
 import { ArrowLeft, ArrowRight, Check, RotateCcw } from "lucide-react";
 import { strings } from "@/lib/strings";
 import { LANES, type Lane } from "@/lib/tasks";
@@ -19,8 +19,8 @@ export type BoardCard = {
   isPrivate: boolean;
   /** "3/12 סיימו" on team-wide tasks. */
   progress: string;
-  /** "2/4 שלבים" when the task has a checklist. */
-  steps: string;
+  /** The task's steps (progress, tick, add), the same component as in the list. */
+  checklist: ReactNode;
   teamWide: boolean;
   /** I may mark it done / open again (mirrors RLS; the database still decides). */
   canFinish: boolean;
@@ -203,35 +203,45 @@ function Card({
       data-card={card.id}
       onPointerDown={onPointerDown}
       onContextMenu={(e) => e.preventDefault()}
-      className={`flex cursor-grab touch-manipulation select-none items-start gap-2 rounded-[var(--radius-cell)] border bg-paper py-2.5 pe-1.5 ps-3 [-webkit-touch-callout:none] data-[drag-src]:opacity-35 ${
+      className={`cursor-grab touch-manipulation select-none rounded-[var(--radius-cell)] border bg-paper py-2.5 pe-1.5 ps-3 [-webkit-touch-callout:none] data-[drag-src]:opacity-35 ${
         lane === "doing" ? "border-now" : "border-rule"
       }`}
     >
-      <div className="min-w-0 flex-1">
-        <p className={`text-base font-bold leading-snug ${done ? "text-ink-2 line-through" : ""}`}>{card.title}</p>
-        {card.notes ? <p className="truncate text-sm text-ink-2">{card.notes}</p> : null}
-        <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-ink-2">
-          {card.due ? (
-            <span className={card.overdue && !done ? "font-bold text-absent-ink" : "font-bold text-ink"}>
-              {card.overdue && !done ? `${s.groups.overdue} · ${card.due}` : card.due}
-            </span>
+      <div className="flex items-start gap-2">
+        <div className="min-w-0 flex-1">
+          <p className={`text-base font-bold leading-snug ${done ? "text-ink-2 line-through" : ""}`}>{card.title}</p>
+          {card.notes ? <p className="truncate text-sm text-ink-2">{card.notes}</p> : null}
+          <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-ink-2">
+            {card.due ? (
+              <span className={card.overdue && !done ? "font-bold text-absent-ink" : "font-bold text-ink"}>
+                {card.overdue && !done ? `${s.groups.overdue} · ${card.due}` : card.due}
+              </span>
+            ) : null}
+            {card.who ? <span>{card.who}</span> : null}
+            {card.progress ? <span className="font-bold text-present-ink">{card.progress}</span> : null}
+            {card.isPrivate ? <span className="font-bold text-ink">{s.privateTag}</span> : null}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-col items-stretch gap-1">
+          {lane === "todo" ? moveButton("doing", s.start, <ArrowLeft aria-hidden size={16} />, true) : null}
+          {lane === "doing" ? (
+            <>
+              {card.canFinish ? moveButton("done", s.finish, <Check aria-hidden size={16} strokeWidth={3} />, true) : null}
+              {moveButton("todo", s.back, <ArrowRight aria-hidden size={16} />)}
+            </>
           ) : null}
-          {card.who ? <span>{card.who}</span> : null}
-          {card.progress ? <span className="font-bold text-present-ink">{card.progress}</span> : null}
-          {card.steps ? <span className="font-bold text-ink">{card.steps}</span> : null}
-          {card.isPrivate ? <span className="font-bold text-ink">{s.privateTag}</span> : null}
-        </p>
+          {done && card.canFinish ? moveButton("todo", s.reopen, <RotateCcw aria-hidden size={16} />) : null}
+        </div>
       </div>
-      <div className="flex shrink-0 flex-col items-stretch gap-1">
-        {lane === "todo" ? moveButton("doing", s.start, <ArrowLeft aria-hidden size={16} />, true) : null}
-        {lane === "doing" ? (
-          <>
-            {card.canFinish ? moveButton("done", s.finish, <Check aria-hidden size={16} strokeWidth={3} />, true) : null}
-            {moveButton("todo", s.back, <ArrowRight aria-hidden size={16} />)}
-          </>
-        ) : null}
-        {done && card.canFinish ? moveButton("todo", s.reopen, <RotateCcw aria-hidden size={16} />) : null}
-      </div>
+      {card.checklist ? (
+        // Full card width. Pressing here never lifts the card, and text can be typed (the card is select-none).
+        <div
+          onPointerDown={(e) => e.stopPropagation()}
+          className="flex cursor-auto select-text flex-wrap items-center gap-x-4 pe-1.5"
+        >
+          {card.checklist}
+        </div>
+      ) : null}
     </li>
   );
 }
