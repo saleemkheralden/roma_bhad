@@ -12,6 +12,7 @@ const API = "https://sheets.googleapis.com/v4/spreadsheets";
 export type SheetProblem =
   | "not-configured" // Roma isn't connected to Google at all
   | "needs-scope" // connected before Sheets existed: re-run the connect script
+  | "api-disabled" // the Sheets API isn't enabled in Roma's Google Cloud project
   | "not-shared" // the sheet isn't shared with Roma's account (or doesn't exist)
   | "no-tab" // the tab was deleted or renamed away
   | "quota" // Google's per-minute limit
@@ -24,6 +25,7 @@ async function problemOf(res: Response): Promise<SheetProblem> {
   if (res.status === 404) return "not-shared";
   if (res.status === 403 || res.status === 401) {
     const body = await res.text().catch(() => "");
+    if (/SERVICE_DISABLED|has not been used in project|is disabled/i.test(body)) return "api-disabled";
     return /SCOPE_INSUFFICIENT|insufficient authentication scopes/i.test(body) ? "needs-scope" : "not-shared";
   }
   return "error";
