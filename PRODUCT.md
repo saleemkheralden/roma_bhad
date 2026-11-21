@@ -10,14 +10,14 @@ Mobile-first web app, installable as a PWA. Used on personal phones; desktop is 
 
 ## Users
 
-- **Role-holders during the day.** Cadets in an IDF officers course who currently hold a command role (א' פלוגה, א' צוות "ממש", קל"ג, קמב"צ and others) are the only cadets with phones during the day. They use their own personal phones and accounts. Their jobs: take roll call fast, assign team tasks, check today's schedule and lists, often standing, in a hurry, with one hand, in the sun, under pressure from staff.
+- **Role-holders during the day.** Cadets in an IDF officers course who currently hold a command role are the only cadets with phones during the day. They use their own personal phones and accounts. Their jobs: take roll call fast, assign team tasks, check today's schedule and lists, often standing, in a hurry, with one hand, in the sun, under pressure from staff.
 - **All cadets in the evening and on weekends.** Everyone else gets their phone back after classes end and on weekends. Their jobs: catch up on what the team got today, check their own private tasks and tomorrow's schedule. Tomorrow's role-holders prepare here: handover notes and learning the team's names.
 - **Course staff** (the team's מפקדים / סגל) also use it. They can take roll call and assign tasks at any time, so their view of the team matters.
 - Scale: about 10–15 cadets per team (צוות); a company (פלוגה) has several teams.
 
 ## Product Purpose
 
-Roma puts everything a team needs in one place ("all roads lead to Roma"). Today the calendar is in Google Calendar, the security-team list is in one place, spreadsheets are in another, and every cadet tracks tasks differently. A new role-holder also has to learn everyone's names, and roll call keeps starting over.
+Roma puts everything a team needs in one place ("all roads lead to Roma"). Today the calendar is in Google Calendar, duty lists are in one place, spreadsheets are in another, and every cadet tracks tasks differently. A new role-holder also has to learn everyone's names, and roll call keeps starting over.
 
 Success: a role-holder takes roll call in seconds without knowing everyone's names by heart, and every cadet knows in the evening what the team got today and what's theirs to do.
 
@@ -35,7 +35,6 @@ Built around how the course actually works: roles rotate daily or weekly, permis
 ## Capabilities and Constraints
 
 - **Information security (hard rule):** the app must stay unclassified. It stores only names and nicknames, team/company names, role titles, generic task text, attendance status with a short reason, links, and an optional photo. Never locations, base names, operational schedules or missions, weapons or equipment, ID numbers, or medical details. No analytics or third-party trackers. Not indexed by search engines.
-- **Approval pending:** course staff and information-security approval (Phase 0) is still pending; the app isn't shared with other cadets until then.
 - **Language:** Hebrew UI, right-to-left. Military terms and abbreviations (צוות, פלוגה, התנסות, מ"צ, קל"ג, קמב"צ) are the vocabulary, used as cadets say them.
 - **Free tier:** Next.js on Vercel Hobby plus Supabase Free. A course tool for tens to about 150 users.
 - Phase 1 scope: teams, roster, configurable roles, today's role-holders, roll call with a copyable summary and history, links hub. Tasks, calendar/sheets integration, name trainer and notifications come in later phases (see ROADMAP.md).

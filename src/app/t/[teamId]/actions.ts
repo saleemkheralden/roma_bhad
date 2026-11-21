@@ -124,6 +124,20 @@ export async function regenerateInvite(teamId: number) {
   return { ok: true };
 }
 
+// End of course: delete the whole team -----------------------------------------
+
+/** Admins only (RLS). The typed team name guards against a mis-tap; everything cascades. */
+export async function deleteTeam(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: team } = await supabase.from("teams").select("name").eq("id", teamId).maybeSingle();
+  if (!team) return { error: strings.common.noPermission };
+  if (text(formData, "confirm_name") !== team.name.trim()) return { error: strings.data.nameMismatch };
+  const { error, count } = await supabase.from("teams").delete({ count: "exact" }).eq("id", teamId);
+  if (error) return fail(error);
+  if (count === 0) return { error: strings.common.noPermission };
+  redirect("/");
+}
+
 // Roles and assignments ------------------------------------------------------
 
 export async function addRole(teamId: number, _p: ActionResult, formData: FormData) {
@@ -394,6 +408,51 @@ export async function removeChecklistStep(teamId: number, itemId: number) {
 
 export async function deleteTask(teamId: number, taskId: number) {
   return run((db) => db.from("tasks").delete({ count: "exact" }).eq("team_id", teamId).eq("id", taskId));
+}
+
+// Notices ----------------------------------------------------------------------
+
+function noticeFields(formData: FormData) {
+  return {
+    title: text(formData, "title").slice(0, 80),
+    body: text(formData, "body").slice(0, 1000),
+    audience: text(formData, "audience") === "command" ? ("command" as const) : ("team" as const),
+    expires_on: text(formData, "expires_on") || null,
+  };
+}
+
+export async function postNotice(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const fields = noticeFields(formData);
+  if (!fields.title) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const { error } = await supabase.from("notices").insert({
+    team_id: teamId,
+    ...fields,
+    pinned: formData.get("pinned") === "on",
+    created_by: claims?.claims?.sub,
+  });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true, message: strings.notices.posted };
+}
+
+export async function updateNotice(teamId: number, noticeId: number, _p: ActionResult, formData: FormData) {
+  const fields = noticeFields(formData);
+  if (!fields.title) return { error: strings.common.genericError };
+  return run((db) =>
+    db.from("notices").update(fields, { count: "exact" }).eq("team_id", teamId).eq("id", noticeId),
+  );
+}
+
+export async function setNoticePinned(teamId: number, noticeId: number, pinned: boolean) {
+  return run((db) =>
+    db.from("notices").update({ pinned }, { count: "exact" }).eq("team_id", teamId).eq("id", noticeId),
+  );
+}
+
+export async function removeNotice(teamId: number, noticeId: number) {
+  return run((db) => db.from("notices").delete({ count: "exact" }).eq("team_id", teamId).eq("id", noticeId));
 }
 
 // Calendar ---------------------------------------------------------------------

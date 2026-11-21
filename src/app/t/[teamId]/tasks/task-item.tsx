@@ -24,6 +24,21 @@ export type TaskContext = {
   doingIds?: number[];
 };
 
+/** A task's steps with the viewer's access, bound to its actions. Shared by list rows and board cards. */
+export function ChecklistFor({ task, ctx }: { task: Task; ctx: Pick<TaskContext, "teamId" | "myId" | "canCommand"> }) {
+  return (
+    <TaskChecklist
+      title={task.title}
+      steps={sortSteps(task.task_checklist_items ?? [])}
+      access={checklistAccess(task, ctx.myId, ctx.canCommand)}
+      taskOpen={task.status === "open"}
+      setDone={setChecklistStepDone.bind(null, ctx.teamId)}
+      remove={removeChecklistStep.bind(null, ctx.teamId)}
+      add={addChecklistSteps.bind(null, ctx.teamId, task.id)}
+    />
+  );
+}
+
 /** One task in a list: a per-cadet row for open team-wide tasks, a plain row otherwise. */
 export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
   const due = dueLabel(task, ctx.today);
@@ -48,17 +63,7 @@ export function TaskItem({ task, ctx }: { task: Task; ctx: TaskContext }) {
       members={ctx.members}
     />
   ) : null;
-  const checklist = (
-    <TaskChecklist
-      title={task.title}
-      steps={sortSteps(task.task_checklist_items ?? [])}
-      access={checklistAccess(task, ctx.myId, ctx.canCommand)}
-      taskOpen={task.status === "open"}
-      setDone={setChecklistStepDone.bind(null, ctx.teamId)}
-      remove={removeChecklistStep.bind(null, ctx.teamId)}
-      add={addChecklistSteps.bind(null, ctx.teamId, task.id)}
-    />
-  );
+  const checklist = <ChecklistFor task={task} ctx={ctx} />;
 
   if (isTeamWide(task) && task.status === "open") {
     return (

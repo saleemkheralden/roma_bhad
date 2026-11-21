@@ -14,6 +14,7 @@ export type Session = Tables["attendance_sessions"]["Row"];
 export type Entry = Tables["attendance_entries"]["Row"];
 export type LinkRow = Tables["links"]["Row"];
 export type Integration = Tables["integrations"]["Row"];
+export type Notice = Tables["notices"]["Row"];
 export type ChecklistItem = Pick<Tables["task_checklist_items"]["Row"], "id" | "text" | "position" | "done">;
 export type Task = Tables["tasks"]["Row"] & {
   task_completions: { member_id: number }[];
@@ -164,6 +165,21 @@ export async function getTaskLayout() {
   const { data, error } = await supabase.from("user_settings").select("task_layout").maybeSingle();
   if (error) throw error;
   return asLayout(data?.task_layout);
+}
+
+/** Notices still on the board (not past their expiry date); RLS hides handover notes from non-role-holders. */
+export async function getNotices(teamId: number, today: string) {
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .from("notices")
+    .select("*")
+    .eq("team_id", teamId)
+    .or(`expires_on.is.null,expires_on.gte.${today}`)
+    .order("pinned", { ascending: false })
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
 }
 
 export async function getCalendars(teamId: number) {
