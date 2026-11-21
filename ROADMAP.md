@@ -165,4 +165,4 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), duty 
 - [ ] Duty rotation with fairness points and blocked-out dates
 - [ ] Offline support for roll call (service worker + sync queue)
 - [x] Export all data, then delete it all (end of course): "my data" download for every member, full team download and typed-name team deletion for admins (Team page → הנתונים)
-- [ ] Onboarding for other teams
+- [x] Onboarding for other teams: a setup checklist on Today for managers (roster, today's/tomorrow's role-holders, invite; calendar and links optional), ticked off from real data, hidden when done or dismissed on that phone

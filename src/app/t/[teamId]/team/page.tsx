@@ -48,6 +48,7 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
       <h1 className="sr-only">{s.title}</h1>
 
       <Section
+        id="roster"
         title={s.roster}
         aside={
           <span className="flex items-center gap-3">
@@ -352,7 +353,7 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
         ) : null}
       </Section>
 
-      <Section title={s.invite}>
+      <Section id="invite" title={s.invite}>
         <div className="rounded-[var(--radius-control)] border border-rule bg-paper p-4">
           <p dir="ltr" className="text-center text-[2rem] font-extrabold tracking-[0.2em]">
             {ctx.team.invite_code}

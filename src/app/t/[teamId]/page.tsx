@@ -15,6 +15,7 @@ import { StartRollCall } from "./start-roll-call";
 import { startRollCall } from "./actions";
 import { TaskItem, type TaskContext } from "./tasks/task-item";
 import { NoticeCard } from "./notices/notice-card";
+import { SetupChecklist, type SetupStep } from "./setup-checklist";
 
 const t = strings.today;
 const a = strings.attendance;
@@ -216,8 +217,32 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
       </Section>
     ) : null;
 
+  // First-run setup for whoever manages the team (hidden once the required steps are done).
+  const st = strings.setup;
+  const base = `/t/${teamId}`;
+  const setupSteps: SetupStep[] = [
+    { key: "roster", label: st.roster, hint: st.rosterHint, href: `${base}/team#roster`, done: ctx.roster.length >= 3 },
+    {
+      key: "assign",
+      label: st.assign,
+      hint: st.assignHint,
+      href: `${base}/team#assignments`,
+      done: ctx.onDuty.length + ctx.upcoming.length > 0,
+    },
+    {
+      key: "invite",
+      label: st.invite,
+      hint: st.inviteHint,
+      href: `${base}/team#invite`,
+      done: ctx.roster.some((m) => m.user_id && m.id !== ctx.me?.id),
+    },
+    { key: "calendar", label: st.calendar, hint: st.calendarHint, href: `${base}/team#calendar`, done: calendars.length > 0, optional: true },
+    { key: "links", label: st.links, hint: st.linksHint, href: `${base}/links`, done: links.length > 0, optional: true },
+  ];
+
   return (
     <>
+      {ctx.permissions.can_manage ? <SetupChecklist teamId={teamId} steps={setupSteps} /> : null}
       {evening ? noticesSection : null}
       {evening ? catchUpSection : null}
       <Section title={t.rollCall}>
