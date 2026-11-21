@@ -149,9 +149,9 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 ### Phase 3: Integrations
 - [x] Settings: paste the team's Google Calendar (ID, share link, embed link or `<iframe>` code) → agenda embed on Today, up to 3 calendars
 - [x] Calendar API via a service account: Roma's own agenda on Today (works on any phone, calendar stays private); falls back to the embed until the calendar is shared with the service account
-- [ ] Google Cloud service account + Sheets API (read-only); the staff shares the sheet with the service account's email
-- [ ] Sheet viewer: pick a tab/range → mobile-friendly table, cached
-- [ ] Error states (sheet not shared, quota exceeded)
+- [x] Sheets API (read-only) through Roma's own Google account (same as the calendar, no service account): the staff shares the sheet with Roma's address as Viewer; the connect script now asks for `spreadsheets.readonly` too
+- [x] Sheet viewer: paste a tab's link (+ optional range) on Links → cards or table with search, capped at 300×15, cached ~1 min, never stored
+- [x] Error states: Roma not connected, connected without the Sheets scope, sheet not shared/deleted, tab gone, quota, other errors
 
 ### Phase 4: Simulation features
 - [ ] Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)

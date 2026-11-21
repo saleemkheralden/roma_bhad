@@ -4,7 +4,7 @@ import { BoardHeader } from "@/components/board";
 export const metadata = { title: "מדיניות פרטיות" };
 
 const CONTACT = "roma.d.standard@gmail.com";
-const UPDATED = "19.11.2026";
+const UPDATED = "21.11.2026";
 
 // Public page (no sign-in): required by Google for the OAuth consent screen.
 export default function PrivacyPage() {
@@ -26,7 +26,7 @@ export default function PrivacyPage() {
           <li>שמות חברי הצוות, תפקידים ושיבוצים.</li>
           <li>סטטוס נוכחות וסיבה קצרה.</li>
           <li>טקסט של משימות, תאריכי יעד וסימוני ביצוע.</li>
-          <li>קישורים ומזהי יומן Google שהצוות הוסיף.</li>
+          <li>קישורים, ומזהי יומן Google וגיליונות Google שהצוות הוסיף.</li>
         </ul>
         <p>לא נשמרים: מיקומים, מספרים אישיים או תעודות זהות, מידע רפואי או כל מידע מבצעי.</p>
 
@@ -34,6 +34,12 @@ export default function PrivacyPage() {
         <p>
           כשצוות מחבר יומן, רומא קוראת ממנו רק את כותרות האירועים ושעותיהם (הרשאת קריאה בלבד), כדי להציג אותם לחברי הצוות.
           מיקום ותיאור האירועים לא נקראים. האירועים לא נשמרים במסד הנתונים, רק נשמרים בזיכרון לכדקה.
+        </p>
+
+        <h2>גיליונות Google</h2>
+        <p>
+          כשצוות מחבר גיליון, רומא קוראת את ערכי התאים של הלשונית שנבחרה (הרשאת קריאה בלבד) ומציגה אותם לחברי הצוות.
+          התאים לא נשמרים במסד הנתונים, רק בזיכרון לכדקה. נשמר רק מזהה הגיליון.
         </p>
 
         <h2>מי רואה מה</h2>
@@ -65,13 +71,13 @@ export default function PrivacyPage() {
           </p>
           <p>
             <strong>Data stored:</strong> the sign-in name and email; team member names, roles and assignments; attendance
-            status with a short reason; task text and due dates; links and Google Calendar IDs added by the team. No
+            status with a short reason; task text and due dates; links and Google Calendar and Google Sheets IDs added by the team. No
             locations, ID numbers, medical or operational data.
           </p>
           <p>
             <strong>Google user data:</strong> with read-only calendar access, Roma reads only event titles and times
             from calendars a team connects, to show them to that team. Event locations and descriptions are not
-            requested. Events are not stored; they are kept in memory for about a minute. Roma&apos;s use and transfer of
+            requested. Events are not stored; they are kept in memory for about a minute. With read-only Sheets access, Roma reads the cell values of the tab a team connects, to show them to that team; cell values are not stored either, only kept in memory for about a minute, and only the spreadsheet ID is saved. Roma&apos;s use and transfer of
             information received from Google APIs adheres to the{" "}
             <a
               href="https://developers.google.com/terms/api-services-user-data-policy"

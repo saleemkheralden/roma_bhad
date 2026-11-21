@@ -8,6 +8,8 @@ import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
 import { parseCalendarIds } from "@/lib/calendar";
 import { calendarAccountEmail, probeCalendar } from "@/lib/google-calendar";
+import { probeSheet } from "@/lib/google-sheets";
+import { encodeSheetRef, parseSheetInput } from "@/lib/sheets";
 import { LANES, LAYOUTS, parseSteps, type Lane, type TaskLayout } from "@/lib/tasks";
 
 // Permissions are enforced by RLS and triggers in the database; these
@@ -423,6 +425,46 @@ export async function addCalendar(teamId: number, _p: ActionResult, formData: Fo
   if (!configured) return { ok: true, message: strings.calendar.connectedEmbed };
   if (notShared > 0) return { ok: true, warning: strings.calendar.savedNotShared(calendarAccountEmail() ?? "") };
   return { ok: true, message: strings.calendar.connectedOk };
+}
+
+/** Connect a Google Sheet tab (stored as an identifier only; cells are read on view). */
+export async function addSheet(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const s = strings.sheets;
+  const rangeText = text(formData, "range");
+  const parsed = parseSheetInput(text(formData, "sheet"), rangeText);
+  if (!parsed) return { error: parseSheetInput(text(formData, "sheet")) ? s.badRange : s.badInput };
+
+  const probe = await probeSheet(parsed.spreadsheetId);
+  if (!probe.ok && probe.problem === "not-configured") return { error: s.notConnectedYet };
+  if (!probe.ok && probe.problem === "needs-scope") return { error: s.problem["needs-scope"] };
+  if (!probe.ok && (probe.problem === "quota" || probe.problem === "error")) return { error: s.problem[probe.problem] };
+
+  let ref = parsed;
+  let label = text(formData, "label").slice(0, 60);
+  if (probe.ok) {
+    const tab = parsed.gid === null ? probe.meta.tabs[0] : probe.meta.tabs.find((t) => t.gid === parsed.gid);
+    if (!tab) return { error: s.problem["no-tab"] };
+    ref = { ...parsed, gid: tab.gid };
+    if (!label) label = [probe.meta.title, probe.meta.tabs.length > 1 ? tab.title : ""].filter(Boolean).join(" · ").slice(0, 60);
+  }
+
+  const supabase = await createClient();
+  const { count } = await supabase
+    .from("integrations")
+    .select("id", { count: "exact", head: true })
+    .eq("team_id", teamId)
+    .eq("kind", "gsheet");
+  if ((count ?? 0) >= 10) return { error: s.tooMany };
+
+  const { data: claims } = await supabase.auth.getClaims();
+  const { error } = await supabase
+    .from("integrations")
+    .insert({ team_id: teamId, kind: "gsheet", external_id: encodeSheetRef(ref), label, created_by: claims?.claims?.sub });
+  if (error?.code === "23505") return { error: s.duplicate };
+  if (error) return fail(error);
+  refresh();
+  if (!probe.ok) return { ok: true, warning: s.savedNotShared(calendarAccountEmail() ?? "") };
+  return { ok: true, message: s.connectedOk };
 }
 
 export async function removeIntegration(teamId: number, integrationId: number) {
