@@ -1,42 +1,15 @@
 import "server-only";
 import { cacheLife } from "next/cache";
 import { normalizeEvents, type CalEvent, type GoogleItem } from "./agenda";
+import { accessToken, credentials, romaAccountEmail } from "./google-auth";
+
+/** The address calendars must be shared with (shown in the team settings). */
+export const calendarAccountEmail = romaAccountEmail;
 
 // Reads team calendars as Roma's own Google account (e.g. the roma Gmail account), which the
 // calendar owner shares calendars with ("See all event details"). The account authorised Roma
 // once (scripts/connect-google-calendar.mjs, read-only scope); the refresh token lives only in
 // server env. Only id, title, status and times are requested: never location or description.
-
-const TOKEN_URL = "https://oauth2.googleapis.com/token";
-
-type Creds = { clientId: string; clientSecret: string; refreshToken: string };
-
-function credentials(): Creds | null {
-  const clientId = process.env.GOOGLE_OAUTH_CLIENT_ID?.trim();
-  const clientSecret = process.env.GOOGLE_OAUTH_CLIENT_SECRET?.trim();
-  const refreshToken = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN?.trim();
-  return clientId && clientSecret && refreshToken ? { clientId, clientSecret, refreshToken } : null;
-}
-
-/** The address calendars must be shared with (shown in the team settings). */
-export function calendarAccountEmail() {
-  return credentials() ? process.env.GOOGLE_CALENDAR_ACCOUNT?.trim() || null : null;
-}
-
-async function accessToken(creds: Creds) {
-  const res = await fetch(TOKEN_URL, {
-    method: "POST",
-    headers: { "Content-Type": "application/x-www-form-urlencoded" },
-    body: new URLSearchParams({
-      grant_type: "refresh_token",
-      client_id: creds.clientId,
-      client_secret: creds.clientSecret,
-      refresh_token: creds.refreshToken,
-    }),
-  });
-  if (!res.ok) throw new Error(`token ${res.status}`);
-  return ((await res.json()) as { access_token: string }).access_token;
-}
 
 export type CalendarAccess =
   | { status: "ok"; name: string }
