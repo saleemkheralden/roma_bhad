@@ -23,6 +23,7 @@ import {
   removeCompanyRole,
   setCompanyAdmin,
 } from "../actions";
+import { leaveBattalion } from "../../b/actions";
 
 const c = strings.company;
 const a = strings.attendance;
@@ -335,6 +336,22 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
             />
           ) : null}
         </Section>
+
+        {ctx.company.battalion_id ? (
+          <Section title={strings.battalion.title}>
+            <p className="text-base">{strings.battalion.companyLinked}</p>
+            {ctx.isAdmin ? (
+              <EditArea
+                title={strings.battalion.leave}
+                remove={
+                  <ActionButton action={leaveBattalion.bind(null, companyId)} confirm={strings.battalion.confirmLeave} variant="danger">
+                    {strings.battalion.leave}
+                  </ActionButton>
+                }
+              />
+            ) : null}
+          </Section>
+        ) : null}
 
         <Section title={c.invite}>
           <div className="rounded-[var(--radius-control)] border border-rule bg-paper p-4">

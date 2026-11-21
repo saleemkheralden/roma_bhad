@@ -7,6 +7,7 @@ import { buttonClass } from "@/components/button-class";
 import { BoardHeader } from "@/components/board";
 import { joinTeam } from "../actions";
 import { joinCompany } from "../c/actions";
+import { joinBattalion } from "../b/actions";
 import { ClaimPicker } from "./claim-picker";
 
 const s = strings.join;
@@ -68,6 +69,32 @@ async function JoinBody({ searchParams }: { searchParams: Promise<{ code?: strin
             <input type="hidden" name="code" value={code} />
             <Field label={strings.company.displayName} name="display_name" required maxLength={60} autoComplete="name" />
             <SubmitButton>{strings.company.join}</SubmitButton>
+          </ActionForm>
+        </div>
+      );
+    }
+    const { data: bt } = await supabase.rpc("preview_battalion", { p_code: code });
+    const battalion = bt as unknown as { battalion_id: number; battalion_name: string; already_member: boolean } | null;
+    if (battalion?.already_member) {
+      return (
+        <div className="flex flex-col gap-4">
+          <p className="text-lg font-bold">{battalion.battalion_name}</p>
+          <p className="text-ink-2">{strings.battalion.alreadyMember}</p>
+          <Link href={`/b/${battalion.battalion_id}`} className={buttonClass("primary")}>
+            {strings.battalion.openDashboard}
+          </Link>
+        </div>
+      );
+    }
+    if (battalion) {
+      return (
+        <div className="flex flex-col gap-6">
+          <p className="text-2xl font-extrabold">{strings.battalion.joinTitle(battalion.battalion_name)}</p>
+          <p className="text-sm text-ink-2">{strings.battalion.joinNote}</p>
+          <ActionForm action={joinBattalion} className="flex flex-col gap-4">
+            <input type="hidden" name="code" value={code} />
+            <Field label={strings.battalion.displayName} name="display_name" required maxLength={60} autoComplete="name" />
+            <SubmitButton>{strings.battalion.join}</SubmitButton>
           </ActionForm>
         </div>
       );

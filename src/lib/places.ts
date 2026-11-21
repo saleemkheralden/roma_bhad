@@ -2,6 +2,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { getMyTeams } from "@/lib/data";
 import { getMyCompanies } from "@/lib/company-data";
+import { getMyBattalions } from "@/lib/battalion-data";
 
 // Every unit the signed-in user belongs to, for the header switcher and the home redirect.
 
@@ -9,11 +10,12 @@ export type PlaceKind = "team" | "company" | "battalion";
 export type Place = { kind: PlaceKind; id: number; name: string };
 
 export async function getMyPlaces(): Promise<Place[]> {
-  const [teams, companies] = await Promise.all([getMyTeams(), getMyCompanies()]);
+  const [teams, companies, battalions] = await Promise.all([getMyTeams(), getMyCompanies(), getMyBattalions()]);
   const byName = (a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name, "he");
   return [
     ...[...teams].sort(byName).map((t) => ({ kind: "team" as const, id: t.id, name: t.name })),
     ...[...companies].sort(byName).map((c) => ({ kind: "company" as const, id: c.id, name: c.name })),
+    ...[...battalions].sort(byName).map((b) => ({ kind: "battalion" as const, id: b.id, name: b.name })),
   ];
 }
 
