@@ -55,7 +55,10 @@ export async function updateMember(teamId: number, memberId: number, _p: ActionR
   return run((db) =>
     db
       .from("team_members")
-      .update({ first_name: first, last_name: text(formData, "last_name") }, { count: "exact" })
+      .update(
+        { first_name: first, last_name: text(formData, "last_name"), nickname: text(formData, "nickname").slice(0, 40) || null },
+        { count: "exact" },
+      )
       .eq("team_id", teamId)
       .eq("id", memberId),
   );
