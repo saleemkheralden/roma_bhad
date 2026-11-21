@@ -2,13 +2,13 @@
 
 ## The problem
 1. **Names**: cadets in a rotating command role (התנסות מ"צ / מ"פ) have to learn the names of everyone in the team, and roll call starts from scratch every time.
-2. **Things are spread out**: the calendar is in Google Calendar, the security-team list is somewhere else, and spreadsheets sit in a third place.
+2. **Things are spread out**: the calendar is in Google Calendar, duty lists are somewhere else, and spreadsheets sit in a third place.
 3. **Tasks**: there are lots of them and everyone tracks them differently. People need team tasks (public) and their own tasks (private) in one view.
 
 ### Who uses it, and when
 | When | Who | What they need |
 |---|---|---|
-| **During the day** | Only role-holders with phones: א' פלוגה, א' צוות "ממש", קל"ג, קמב"צ… (personal phones, own accounts) | Fast roll call, assigning team tasks, today's schedule, the security-team list, links |
+| **During the day** | Only today's role-holders have phones (personal phones, own accounts) | Fast roll call, assigning team tasks, today's schedule, duty lists, links |
 | **Evening after classes, and weekends** | Everyone | Catch-up: what the team got today, my private tasks, tomorrow's schedule. Tomorrow's role-holders prepare: handover notes, learning names |
 
 This means:
@@ -25,7 +25,7 @@ This means:
 |---|---|---|---|
 | Learning names | NameDrill, FaceCards, FaceRecall (iOS flashcards with spaced repetition) | Photo + name flashcards, and the people you get wrong come back more often | **Build** a simple version on top of our own roster. These apps can't import a team list |
 | Roll call / accountability | Army PERSTAT "Leaders Book", Adyton Mustr/AOK (US military), a planned IDF morning self-report app | One-tap checklist, reasons for absence, a summary ready to send, alerts for people who haven't reported | **Build** (this is the core feature) |
-| Guard / security-team rosters | Picket List (auto-assigns guard slots), SAF Duty Roster (open source, points-based fairness), eDuty | Fair rotation using points and blocked-out dates | Phase 2: **build**, borrowing the points algorithm from SAF Duty Roster |
+| Duty rosters | Picket List (auto-assigns guard slots), SAF Duty Roster (open source, points-based fairness), eDuty | Fair rotation using points and blocked-out dates | Phase 2: **build**, borrowing the points algorithm from SAF Duty Roster |
 | Calendar | Google Calendar | It's already the source of truth, so don't replace it | **Integrate**: iframe embed first, Calendar API later |
 | Spreadsheets | Google Sheets | Keep the staff's existing sheets as the source | **Integrate**: Sheets API (read-only) |
 | Tasks | Todoist, Trello, Army NCO Tools "Blue Force Taskr" | Assignee, due date ("suspense"), public vs. private | **Build**: we need the team/private split and the role rotation |
@@ -86,7 +86,7 @@ Goal: one team uses it for a full week.
 Team and private tasks, due dates, a "my day" view (my private tasks + team tasks assigned to me + today's events), and done/undone. Plus an **evening catch-up view**: what was added today and what's due tomorrow, for the cadets who only get their phones in the evening.
 
 ### Phase 3: Integrations (weeks 6–7)
-An embedded Google Calendar (then a native "today" list from the Calendar API), a read-only Google Sheets view (for example the security-team list rendered as a clean table), and caching for weak reception.
+An embedded Google Calendar (then a native "today" list from the Calendar API), a read-only Google Sheets view (for example a duty list rendered as a clean table), and caching for weak reception.
 
 ### Phase 4: Leadership simulation features (weeks 8–9)
 - **Name trainer**: photo/role/nickname → name flashcards and a quiz before your התנסות starts.
@@ -95,7 +95,7 @@ An embedded Google Calendar (then a native "today" list from the Calendar API), 
 - (The basic role rotation moved into Phase 1.)
 
 ### Phase 5: Scale and polish (week 10+)
-Multiple teams and a company view (התנסות מ"פ sees all its teams), guard/security-team rotation with fairness points, end-of-course data deletion and export, and offline mode.
+Multiple teams and a company view (התנסות מ"פ sees all its teams), duty rotation with fairness points, end-of-course data deletion and export, and offline mode.
 
 ---
 
@@ -105,14 +105,14 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Write a one-page pitch (problem, solution, what data is and isn't stored)
 - [ ] Get approval from the course staff and the information-security officer
 - [ ] Interview 5–8 cadets: how roll call is done today, where tasks come from, which sheets they use
-- [ ] Collect real examples: the roll-call message format, the security-team sheet, the calendar
+- [ ] Collect real examples: the roll-call message format, the duty sheets, the calendar
 - [ ] Decide: Hebrew only? Photos allowed?
 
 ### Phase 1: MVP
 - [x] Scaffold the app (Next.js 16 + TypeScript + Tailwind 4, `dir="rtl"`, Heebo font, PWA manifest)
 - [x] Add Impeccable (dev dependency + project skills)
 - [x] Create the design context (`PRODUCT.md`, "Departure Board" direction in `.impeccable/surfaces/src-app.md`)
-- [x] `git init` + private GitHub repo + link to Vercel; first deploy (behind Vercel login)
+- [x] `git init` + GitHub repo + link to Vercel; first deploy (behind Vercel login)
 - [x] Give the Vercel GitHub app access to the repo, so every push deploys
 - [x] Local Supabase + Phase 1 schema (`teams`, `team_members`, `team_roles`, `role_assignments`, `attendance_*`, `links`) with RLS and 25 pgTAP tests
 - [x] Create the hosted Supabase project (`roma`, Frankfurt) and push the migrations
@@ -161,7 +161,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 
 ### Phase 5: Scale
 - [ ] Company level: a company holds teams; company dashboard
-- [ ] Guard/security-team rotation with fairness points and blocked-out dates
+- [ ] Duty rotation with fairness points and blocked-out dates
 - [ ] Offline support for roll call (service worker + sync queue)
 - [ ] Export all data, then delete it all (end of course)
 - [ ] Onboarding for other teams
