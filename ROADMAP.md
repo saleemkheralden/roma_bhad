@@ -163,5 +163,5 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 - [ ] Company level: a company holds teams; company dashboard
 - [ ] Guard/security-team rotation with fairness points and blocked-out dates
 - [ ] Offline support for roll call (service worker + sync queue)
-- [ ] Export all data, then delete it all (end of course)
+- [x] Export all data, then delete it all (end of course): "my data" download for every member, full team download and typed-name team deletion for admins (Team page → הנתונים)
 - [ ] Onboarding for other teams
