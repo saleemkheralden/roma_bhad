@@ -124,6 +124,20 @@ export async function regenerateInvite(teamId: number) {
   return { ok: true };
 }
 
+// End of course: delete the whole team -----------------------------------------
+
+/** Admins only (RLS). The typed team name guards against a mis-tap; everything cascades. */
+export async function deleteTeam(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const supabase = await createClient();
+  const { data: team } = await supabase.from("teams").select("name").eq("id", teamId).maybeSingle();
+  if (!team) return { error: strings.common.noPermission };
+  if (text(formData, "confirm_name") !== team.name.trim()) return { error: strings.data.nameMismatch };
+  const { error, count } = await supabase.from("teams").delete({ count: "exact" }).eq("id", teamId);
+  if (error) return fail(error);
+  if (count === 0) return { error: strings.common.noPermission };
+  redirect("/");
+}
+
 // Roles and assignments ------------------------------------------------------
 
 export async function addRole(teamId: number, _p: ActionResult, formData: FormData) {
