@@ -13,6 +13,8 @@ import { EditArea } from "@/components/edit-area";
 import { PlacesMenu } from "@/components/places-menu";
 import { getMyPlaces } from "@/lib/places";
 import {
+  addTeamToCompany,
+  removeTeamFromCompany,
   addCompanyAssignment,
   addCompanyRole,
   regenerateCompanyCode,
@@ -133,6 +135,50 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               ))}
             </ul>
           )}
+          {ctx.isAdmin ? (
+            <EditArea
+              title={c.manageTeams}
+              add={
+                <ActionForm action={addTeamToCompany.bind(null, companyId)} className="flex flex-col gap-2">
+                  <p className="text-sm text-ink-2">{c.addTeamHint}</p>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Field
+                        label={c.teamCode}
+                        name="code"
+                        required
+                        dir="ltr"
+                        maxLength={8}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        className="tracking-[0.2em] uppercase"
+                      />
+                    </div>
+                    <SubmitButton variant="outline">{c.addTeam}</SubmitButton>
+                  </div>
+                </ActionForm>
+              }
+              remove={
+                teams.length ? (
+                  <ul className="flex flex-col gap-2">
+                    {teams.map((t) => (
+                      <li key={t.team_id} className="flex items-center justify-between gap-3">
+                        <span className="truncate text-sm font-bold">{t.team_name}</span>
+                        <ActionButton
+                          action={removeTeamFromCompany.bind(null, companyId, t.team_id)}
+                          confirm={c.confirmRemoveTeam(t.team_name)}
+                          label={`${strings.common.remove} ${t.team_name}`}
+                          variant="icon-danger"
+                        >
+                          <Trash2 aria-hidden size={18} />
+                        </ActionButton>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null
+              }
+            />
+          ) : null}
         </Section>
 
         <Section title={c.assignments}>

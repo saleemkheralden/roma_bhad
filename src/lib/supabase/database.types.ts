@@ -448,6 +448,12 @@ isOneToOne: false
 "join_team":
 { Args: { "p_code": string,"p_first_name"?: string,"p_last_name"?: string,"p_member_id"?: number }; Returns: number
                            },
+"company_add_team":
+{ Args: { "p_company_id": number,"p_team_code": string }; Returns: Json
+                           },
+"company_remove_team":
+{ Args: { "p_company_id": number,"p_team_id": number }; Returns: undefined
+                           },
 "link_team_to_company":
 { Args: { "p_code": string,"p_team_id": number }; Returns: number
                            },
