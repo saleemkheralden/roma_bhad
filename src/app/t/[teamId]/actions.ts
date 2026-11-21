@@ -124,6 +124,19 @@ export async function regenerateInvite(teamId: number) {
   return { ok: true };
 }
 
+// Handover notes ---------------------------------------------------------------
+
+/** Today's role-holders leave a note for a day (tomorrow by default). Author is stamped by the DB. */
+export async function addHandoverNote(teamId: number, forDate: string, _p: ActionResult, formData: FormData) {
+  const body = text(formData, "body").slice(0, 1000);
+  if (!body) return { error: strings.common.genericError };
+  return run((db) => db.from("handover_notes").insert({ team_id: teamId, for_date: forDate, body }));
+}
+
+export async function removeHandoverNote(teamId: number, noteId: number) {
+  return run((db) => db.from("handover_notes").delete({ count: "exact" }).eq("team_id", teamId).eq("id", noteId));
+}
+
 // Roles and assignments ------------------------------------------------------
 
 export async function addRole(teamId: number, _p: ActionResult, formData: FormData) {

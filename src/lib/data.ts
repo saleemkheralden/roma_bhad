@@ -14,6 +14,7 @@ export type Session = Tables["attendance_sessions"]["Row"];
 export type Entry = Tables["attendance_entries"]["Row"];
 export type LinkRow = Tables["links"]["Row"];
 export type Integration = Tables["integrations"]["Row"];
+export type HandoverNote = Tables["handover_notes"]["Row"];
 export type ChecklistItem = Pick<Tables["task_checklist_items"]["Row"], "id" | "text" | "position" | "done">;
 export type Task = Tables["tasks"]["Row"] & {
   task_completions: { member_id: number }[];
@@ -187,6 +188,21 @@ export async function getLinks(teamId: number) {
     .order("category")
     .order("sort_order")
     .order("title");
+  if (error) throw error;
+  return data ?? [];
+}
+
+/** Handover notes for today and tomorrow (older ones are pruned by the database). */
+export async function getHandoverNotes(teamId: number, today: string) {
+  const supabase = await createClient();
+  const tomorrow = new Date(Date.parse(`${today}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
+  const { data, error } = await supabase
+    .from("handover_notes")
+    .select("*")
+    .eq("team_id", teamId)
+    .gte("for_date", today)
+    .lte("for_date", tomorrow)
+    .order("created_at");
   if (error) throw error;
   return data ?? [];
 }

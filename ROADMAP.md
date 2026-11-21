@@ -156,7 +156,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), guard
 ### Phase 4: Simulation features
 - [ ] Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)
 - [ ] Roll-call "practice mode": a photo or nickname is shown and you pick the name
-- [ ] Handover notes between role-holders
+- [x] Handover notes between role-holders: today's command writes for tomorrow on Today; members read; author stamped by the DB; pruned after two weeks (`handover_notes`, 13 pgTAP tests)
 - [ ] Web push for role-holders during the day; an evening summary for everyone
 
 ### Phase 5: Scale

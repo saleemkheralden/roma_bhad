@@ -69,6 +69,33 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"handover_notes": {
+                  Row: {
+                    "author_member_id": number | null,"body": string,"created_at": string,"created_by": string | null,"for_date": string,"id": number,"team_id": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "author_member_id"?: number | null,"body": string,"created_at"?: string,"created_by"?: string | null,"for_date": string,"id"?: never,"team_id": number
+                  }
+                  Update: {
+                    "author_member_id"?: number | null,"body"?: string,"created_at"?: string,"created_by"?: string | null,"for_date"?: string,"id"?: never,"team_id"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "handover_notes_author_member_id_team_id_fkey"
+      columns: ["author_member_id", "team_id"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["id", "team_id"]
+    },
+                    {
+      foreignKeyName: "handover_notes_team_id_fkey"
+      columns: ["team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"integrations": {
                   Row: {
                     "created_at": string,"created_by": string | null,"external_id": string,"id": number,"kind": string,"label": string,"team_id": number
