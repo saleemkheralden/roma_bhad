@@ -10,6 +10,8 @@ import { Section, TallyBar } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
+import { PlacesMenu } from "@/components/places-menu";
+import { getMyPlaces } from "@/lib/places";
 import {
   addCompanyAssignment,
   addCompanyRole,
@@ -81,7 +83,7 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
   const companyId = Number((await params).companyId);
   // Context first: a non-member gets "not found" before the dashboard's permission check runs.
   const ctx = await getCompanyContext(companyId);
-  const teams = await getCompanyDashboard(companyId);
+  const [teams, places] = await Promise.all([getCompanyDashboard(companyId), getMyPlaces()]);
   await connection();
   const now = new Date();
   const h = await headers();
@@ -97,7 +99,7 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               <Link href="/" className="text-[1.375rem] font-extrabold leading-tight">
                 {strings.app.name}
               </Link>
-              <p className="truncate text-sm text-board-dim">{ctx.company.name}</p>
+              <PlacesMenu current={{ kind: "company", id: companyId, name: ctx.company.name }} places={places} />
             </div>
             <p className="shrink-0 text-sm font-bold text-now">
               {dayLabel(now)} · {clock(now)}
