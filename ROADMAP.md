@@ -163,6 +163,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), duty 
 ### Phase 5: Scale
 - [ ] Company level: a company holds teams; company dashboard
 - [ ] Duty rotation with fairness points and blocked-out dates
-- [ ] Offline support for roll call (service worker + sync queue)
+- [x] Offline roll call: every mark is queued on the phone (localStorage) and sent in order; with no reception it waits and is sent when the connection returns (survives a reload)
+- [ ] Offline app shell (open Roma with no reception) via the service worker, after #11 merges
 - [x] Export all data, then delete it all (end of course): "my data" download for every member, full team download and typed-name team deletion for admins (Team page → הנתונים)
 - [ ] Onboarding for other teams

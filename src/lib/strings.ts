@@ -120,6 +120,11 @@ export const strings = {
     summaryTitle: (label: string, team: string, date: string) => `נוכחות ${label} — ${team} — ${date}`,
     summaryPresent: (n: number, total: number) => `נוכחים ${n}/${total}`,
     saveFailed: "השינוי לא נשמר. בדקו חיבור ונסו שוב.",
+    offlinePending: (n: number) =>
+      n === 1
+        ? "אין קליטה: סימון אחד שמור בטלפון ויישלח כשהחיבור יחזור."
+        : `אין קליטה: ${n} סימונים שמורים בטלפון ויישלחו כשהחיבור יחזור.`,
+    offlineSynced: "החיבור חזר, כל הסימונים נשלחו ✓",
   },
   team: {
     title: "הצוות",
