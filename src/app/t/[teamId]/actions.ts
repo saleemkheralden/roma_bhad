@@ -436,7 +436,7 @@ export async function addSheet(teamId: number, _p: ActionResult, formData: FormD
 
   const probe = await probeSheet(parsed.spreadsheetId);
   if (!probe.ok && probe.problem === "not-configured") return { error: s.notConnectedYet };
-  if (!probe.ok && probe.problem === "needs-scope") return { error: s.problem["needs-scope"] };
+  if (!probe.ok && (probe.problem === "needs-scope" || probe.problem === "api-disabled")) return { error: s.problem[probe.problem] };
   if (!probe.ok && (probe.problem === "quota" || probe.problem === "error")) return { error: s.problem[probe.problem] };
 
   let ref = parsed;
