@@ -396,6 +396,51 @@ export async function deleteTask(teamId: number, taskId: number) {
   return run((db) => db.from("tasks").delete({ count: "exact" }).eq("team_id", teamId).eq("id", taskId));
 }
 
+// Notices ----------------------------------------------------------------------
+
+function noticeFields(formData: FormData) {
+  return {
+    title: text(formData, "title").slice(0, 80),
+    body: text(formData, "body").slice(0, 1000),
+    audience: text(formData, "audience") === "command" ? ("command" as const) : ("team" as const),
+    expires_on: text(formData, "expires_on") || null,
+  };
+}
+
+export async function postNotice(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const fields = noticeFields(formData);
+  if (!fields.title) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { data: claims } = await supabase.auth.getClaims();
+  const { error } = await supabase.from("notices").insert({
+    team_id: teamId,
+    ...fields,
+    pinned: formData.get("pinned") === "on",
+    created_by: claims?.claims?.sub,
+  });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true, message: strings.notices.posted };
+}
+
+export async function updateNotice(teamId: number, noticeId: number, _p: ActionResult, formData: FormData) {
+  const fields = noticeFields(formData);
+  if (!fields.title) return { error: strings.common.genericError };
+  return run((db) =>
+    db.from("notices").update(fields, { count: "exact" }).eq("team_id", teamId).eq("id", noticeId),
+  );
+}
+
+export async function setNoticePinned(teamId: number, noticeId: number, pinned: boolean) {
+  return run((db) =>
+    db.from("notices").update({ pinned }, { count: "exact" }).eq("team_id", teamId).eq("id", noticeId),
+  );
+}
+
+export async function removeNotice(teamId: number, noticeId: number) {
+  return run((db) => db.from("notices").delete({ count: "exact" }).eq("team_id", teamId).eq("id", noticeId));
+}
+
 // Calendar ---------------------------------------------------------------------
 
 export async function addCalendar(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
