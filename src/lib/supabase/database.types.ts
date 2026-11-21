@@ -109,6 +109,26 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"notices": {
+                  Row: {
+                    "audience": string,"body": string,"created_at": string,"created_by": string | null,"expires_on": string | null,"id": number,"pinned": boolean,"team_id": number,"title": string,"updated_at": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "audience"?: string,"body"?: string,"created_at"?: string,"created_by"?: string | null,"expires_on"?: string | null,"id"?: never,"pinned"?: boolean,"team_id": number,"title": string,"updated_at"?: string | null
+                  }
+                  Update: {
+                    "audience"?: string,"body"?: string,"created_at"?: string,"created_by"?: string | null,"expires_on"?: string | null,"id"?: never,"pinned"?: boolean,"team_id"?: number,"title"?: string,"updated_at"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "notices_team_id_fkey"
+      columns: ["team_id"]
+isOneToOne: false
+      referencedRelation: "teams"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"push_subscriptions": {
                   Row: {
                     "auth": string,"created_at": string,"endpoint": string,"id": number,"p256dh": string,"user_id": string

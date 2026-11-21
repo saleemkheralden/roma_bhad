@@ -49,3 +49,6 @@ next-env.d.ts
 # impeccable local caches
 .impeccable/hook.cache.json
 .impeccable/seeds/
+
+# private project notes, kept off the public repo (loaded by Claude Code locally)
+CLAUDE.local.md

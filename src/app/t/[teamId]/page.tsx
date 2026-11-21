@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import Link from "next/link";
 import { ChevronDown, ExternalLink } from "lucide-react";
-import { fullName, getCalendars, getLinks, getSessions, getTasks, getTeamContext, type Task } from "@/lib/data";
+import { fullName, getCalendars, getLinks, getNotices, getSessions, getTasks, getTeamContext, type Task } from "@/lib/data";
 import { isoDate } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { tally, type Mark } from "@/lib/attendance";
@@ -14,6 +14,7 @@ import { addDays } from "@/lib/tasks";
 import { StartRollCall } from "./start-roll-call";
 import { startRollCall } from "./actions";
 import { TaskItem, type TaskContext } from "./tasks/task-item";
+import { NoticeCard } from "./notices/notice-card";
 
 const t = strings.today;
 const a = strings.attendance;
@@ -34,12 +35,13 @@ function defaultLabel() {
 
 async function Today({ params }: { params: Promise<{ teamId: string }> }) {
   const teamId = Number((await params).teamId);
-  const [ctx, sessions, links, tasks, calendars] = await Promise.all([
-    getTeamContext(teamId),
+  const ctx = await getTeamContext(teamId);
+  const [sessions, links, tasks, calendars, notices] = await Promise.all([
     getSessions(teamId, 5),
     getLinks(teamId),
     getTasks(teamId),
     getCalendars(teamId),
+    getNotices(teamId, ctx.today),
   ]);
   const latest = sessions.find((s) => isoDate(new Date(s.created_at)) === ctx.today);
   const total = ctx.roster.length;
@@ -184,8 +186,39 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
     </Section>
   );
 
+  // Pinned first (the query orders them), then the newest: the board at a glance.
+  const noticesSection =
+    notices.length > 0 || canCommand ? (
+      <Section
+        key="notices"
+        title={strings.notices.title}
+        aside={
+          <Link href={`/t/${teamId}/notices`} className="inline-flex min-h-11 items-center text-sm font-bold underline">
+            {notices.length > 0 ? strings.notices.all : strings.notices.new}
+          </Link>
+        }
+      >
+        {notices.length === 0 ? (
+          <p className="text-base text-ink-2">{strings.notices.empty}</p>
+        ) : (
+          <ul className="flex flex-col gap-2">
+            {notices.slice(0, 3).map((n) => (
+              <li key={n.id}>
+                <NoticeCard
+                  notice={n}
+                  compact
+                  ctx={{ teamId, today: ctx.today, myUserId: ctx.me?.user_id ?? null, canCommand, roster: ctx.roster }}
+                />
+              </li>
+            ))}
+          </ul>
+        )}
+      </Section>
+    ) : null;
+
   return (
     <>
+      {evening ? noticesSection : null}
       {evening ? catchUpSection : null}
       <Section title={t.rollCall}>
         {rollCall ?? (
@@ -200,6 +233,7 @@ async function Today({ params }: { params: Promise<{ teamId: string }> }) {
         )}
       </Section>
 
+      {evening ? null : noticesSection}
       {myDaySection}
       {calendars.length > 0 ? (
         <Section title={strings.calendar.title}>
