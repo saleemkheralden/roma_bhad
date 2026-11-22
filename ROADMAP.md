@@ -154,8 +154,8 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), duty 
 - [ ] Error states (sheet not shared, quota exceeded)
 
 ### Phase 4: Simulation features
-- [ ] Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)
-- [ ] Roll-call "practice mode": a photo or nickname is shown and you pick the name
+- [ ] ~~Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)~~ — dropped, not needed
+- [ ] ~~Roll-call "practice mode": a photo or nickname is shown and you pick the name~~ — dropped, not needed
 - [x] Notice board (#3): role-holders and staff post to the team; pinned notices, optional expiry, "new today" tag; on Today and its own tab
 - [x] Handover notes between role-holders: notices with the "role-holders only" audience, readable by staff and today's or upcoming role-holders
 - [ ] Web push for role-holders during the day; an evening summary for everyone
