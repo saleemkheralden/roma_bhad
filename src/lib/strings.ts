@@ -41,6 +41,14 @@ export const strings = {
     join: "הצטרפות עם קוד",
     create: "פתיחת צוות חדש",
   },
+  places: {
+    switchLabel: "מעבר בין הצוותים, הפלוגות והגדודים שלך",
+    teams: "הצוותים שלי",
+    companies: "הפלוגות שלי",
+    battalions: "הגדודים שלי",
+    join: "הצטרפות עם קוד",
+    create: "פתיחת צוות חדש",
+  },
   join: {
     title: "הצטרפות לצוות",
     codeLabel: "קוד הצוות",
