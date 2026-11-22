@@ -52,3 +52,13 @@ export async function getBattalionDashboard(battalionId: number) {
   if (error) throw error;
   return (data as unknown as DashboardCompany[]) ?? [];
 }
+
+/** Companies of the battalion with their team names (admins only; unit names, no people). */
+export type StructureCompany = { company_id: number; company_name: string; teams: { team_id: number; team_name: string }[] };
+
+export async function getBattalionStructure(battalionId: number) {
+  const supabase = await createClient();
+  const { data, error } = await supabase.rpc("battalion_structure", { p_battalion_id: battalionId });
+  if (error) throw error;
+  return (data as unknown as StructureCompany[]) ?? [];
+}

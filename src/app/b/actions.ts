@@ -56,6 +56,43 @@ export async function addCompanyToBattalion(battalionId: number, _p: ActionResul
   return { ok: true, message: b.companyAdded((data as { company_name?: string } | null)?.company_name ?? "") };
 }
 
+/** One tap: a company I admin goes into a battalion I admin. */
+export async function addMyCompanyToBattalion(battalionId: number, companyId: number) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("battalion_add_my_company", { p_battalion_id: battalionId, p_company_id: companyId });
+  if (error?.code === "23505") return { error: b.companyTaken };
+  if (error) return fail(error);
+  refresh();
+  return { ok: true };
+}
+
+/** Open a new company directly inside the battalion (the battalion admin becomes its admin). */
+export async function createCompanyInBattalion(battalionId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const name = text(formData, "name");
+  const displayName = text(formData, "display_name");
+  if (!name || !displayName) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_company_in_battalion", {
+    p_battalion_id: battalionId,
+    p_name: name,
+    p_display_name: displayName,
+  });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true, message: b.companyCreated(name) };
+}
+
+/** Move a team between two companies of the battalion. */
+export async function moveTeam(battalionId: number, teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const companyId = Number(text(formData, "company_id"));
+  if (!companyId) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("battalion_move_team", { p_battalion_id: battalionId, p_team_id: teamId, p_company_id: companyId });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true, message: b.teamMoved };
+}
+
 export async function removeCompanyFromBattalion(battalionId: number, companyId: number) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("battalion_remove_company", { p_battalion_id: battalionId, p_company_id: companyId });

@@ -55,6 +55,33 @@ export async function addTeamToCompany(companyId: number, _p: ActionResult, form
   return { ok: true, message: c.teamAdded((data as { team_name?: string } | null)?.team_name ?? "") };
 }
 
+/** One tap: a team I admin goes into a company I admin. */
+export async function addMyTeamToCompany(companyId: number, teamId: number) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("company_add_my_team", { p_company_id: companyId, p_team_id: teamId });
+  if (error?.code === "23505") return { error: c.teamTaken };
+  if (error) return fail(error);
+  refresh();
+  return { ok: true };
+}
+
+/** Open a new team directly inside the company (the company admin becomes its admin). */
+export async function createTeamInCompany(companyId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const name = text(formData, "name");
+  const first = text(formData, "first_name");
+  if (!name || !first) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_team_in_company", {
+    p_company_id: companyId,
+    p_name: name,
+    p_first_name: first,
+    p_last_name: text(formData, "last_name"),
+  });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true, message: c.teamCreated(name) };
+}
+
 export async function removeTeamFromCompany(companyId: number, teamId: number) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("company_remove_team", { p_company_id: companyId, p_team_id: teamId });

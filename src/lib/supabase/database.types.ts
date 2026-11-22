@@ -482,6 +482,24 @@ isOneToOne: false
 "battalion_remove_company":
 { Args: { "p_battalion_id": number,"p_company_id": number }; Returns: undefined
                            },
+"battalion_add_my_company":
+{ Args: { "p_battalion_id": number,"p_company_id": number }; Returns: undefined
+                           },
+"battalion_move_team":
+{ Args: { "p_battalion_id": number,"p_company_id": number,"p_team_id": number }; Returns: undefined
+                           },
+"battalion_structure":
+{ Args: { "p_battalion_id": number }; Returns: Json
+                           },
+"company_add_my_team":
+{ Args: { "p_company_id": number,"p_team_id": number }; Returns: undefined
+                           },
+"create_company_in_battalion":
+{ Args: { "p_battalion_id": number,"p_display_name": string,"p_name": string }; Returns: number
+                           },
+"create_team_in_company":
+{ Args: { "p_company_id": number,"p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
+                           },
 "company_add_team":
 { Args: { "p_company_id": number,"p_team_code": string }; Returns: Json
                            },

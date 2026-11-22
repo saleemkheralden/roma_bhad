@@ -1,5 +1,6 @@
 import "server-only";
 import { cookies } from "next/headers";
+import { createClient, getUserId } from "@/lib/supabase/server";
 import { getMyTeams } from "@/lib/data";
 import { getMyCompanies } from "@/lib/company-data";
 import { getMyBattalions } from "@/lib/battalion-data";
@@ -30,4 +31,21 @@ export async function homeFor(places: Place[]): Promise<string | null> {
   const first = places.find((p) => p.kind === "team") ?? places[0];
   if (!first) return null;
   return `/${first.kind === "team" ? "t" : first.kind === "company" ? "c" : "b"}/${first.id}`;
+}
+
+/** Teams I admin (to add to a company with one tap) and companies I admin (to add to a battalion). */
+export async function getMyAdminUnits() {
+  const userId = await getUserId();
+  if (!userId) return { teams: [], companies: [] };
+  const supabase = await createClient();
+  const [teams, companies] = await Promise.all([
+    supabase.from("team_members").select("teams(id, name, company_id)").eq("user_id", userId).eq("is_admin", true),
+    supabase.from("company_members").select("companies(id, name, battalion_id)").eq("user_id", userId).eq("is_admin", true),
+  ]);
+  return {
+    teams: (teams.data ?? []).map((r) => r.teams).filter((x): x is { id: number; name: string; company_id: number | null } => Boolean(x)),
+    companies: (companies.data ?? [])
+      .map((r) => r.companies)
+      .filter((x): x is { id: number; name: string; battalion_id: number | null } => Boolean(x)),
+  };
 }
