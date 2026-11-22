@@ -112,15 +112,18 @@ export async function removeCompanyRole(companyId: number, roleId: number) {
 
 export async function addCompanyAssignment(companyId: number, _p: ActionResult, formData: FormData) {
   const roleId = Number(text(formData, "role_id"));
-  const memberId = Number(text(formData, "member_id"));
+  // "m:<id>" = company staff, "t:<id>" = a cadet of one of the company's teams.
+  const [kind, rawId] = text(formData, "person").split(":");
+  const personId = Number(rawId);
   const start = text(formData, "start_date");
   const end = text(formData, "end_date") || start;
-  if (!roleId || !memberId || !start || end < start) return { error: strings.common.genericError };
+  if (!roleId || !personId || (kind !== "m" && kind !== "t") || !start || end < start) return { error: strings.common.genericError };
   return run((db) =>
     db.from("company_role_assignments").insert({
       company_id: companyId,
       role_id: roleId,
-      member_id: memberId,
+      member_id: kind === "m" ? personId : null,
+      team_member_id: kind === "t" ? personId : null,
       start_date: start,
       end_date: end,
     }),

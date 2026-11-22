@@ -145,14 +145,14 @@ isOneToOne: false
                   ]
                 },"company_role_assignments": {
                   Row: {
-                    "company_id": number,"created_at": string,"end_date": string,"id": number,"member_id": number,"role_id": number,"start_date": string
+                    "company_id": number,"created_at": string,"end_date": string,"id": number,"member_id": number | null,"role_id": number,"start_date": string,"team_member_id": number | null
                   }
                   ComputedFields: never
                   Insert: {
-                    "company_id": number,"created_at"?: string,"end_date": string,"id"?: never,"member_id": number,"role_id": number,"start_date": string
+                    "company_id": number,"created_at"?: string,"end_date": string,"id"?: never,"member_id"?: number | null,"role_id": number,"start_date": string,"team_member_id"?: number | null
                   }
                   Update: {
-                    "company_id"?: number,"created_at"?: string,"end_date"?: string,"id"?: never,"member_id"?: number,"role_id"?: number,"start_date"?: string
+                    "company_id"?: number,"created_at"?: string,"end_date"?: string,"id"?: never,"member_id"?: number | null,"role_id"?: number,"start_date"?: string,"team_member_id"?: number | null
                   }
                   Relationships: [
                     {
@@ -490,6 +490,9 @@ isOneToOne: false
                            },
 "company_leave_battalion":
 { Args: { "p_company_id": number }; Returns: undefined
+                           },
+"company_people":
+{ Args: { "p_company_id": number }; Returns: Json
                            },
 "company_remove_team":
 { Args: { "p_company_id": number,"p_team_id": number }; Returns: undefined
