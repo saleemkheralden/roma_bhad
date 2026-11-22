@@ -2,19 +2,16 @@ import { Suspense } from "react";
 import { headers } from "next/headers";
 import { connection } from "next/server";
 import { Trash2 } from "lucide-react";
-import { getBattalionContext, getBattalionDashboard, getBattalionStructure, type DashboardCompany, type StructureCompany } from "@/lib/battalion-data";
-import { getMyAdminUnits, getMyPlaces } from "@/lib/places";
+import { getBattalionContext, getBattalionDashboard, type DashboardCompany } from "@/lib/battalion-data";
+import { getMyPlaces } from "@/lib/places";
 import { clock, dayLabel } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section, TallyBar } from "@/components/section";
-import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
+import { ActionForm, Field, SubmitButton } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import { PlacesMenu } from "@/components/places-menu";
 import {
-  addMyCompanyToBattalion,
-  createCompanyInBattalion,
-  moveTeam,
   addCompanyToBattalion,
   regenerateBattalionCode,
   removeBattalionMember,
@@ -85,14 +82,7 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
   const battalionId = Number((await params).battalionId);
   // Context first: a non-member gets "not found" before the dashboard's permission check runs.
   const ctx = await getBattalionContext(battalionId);
-  const [companies, places, adminUnits, structure] = await Promise.all([
-    getBattalionDashboard(battalionId),
-    getMyPlaces(),
-    getMyAdminUnits(),
-    ctx.isAdmin ? getBattalionStructure(battalionId) : Promise.resolve([] as StructureCompany[]),
-  ]);
-  // Companies I admin that aren't in this battalion yet: one tap to add.
-  const myOtherCompanies = adminUnits.companies.filter((x) => x.battalion_id !== battalionId);
+  const [companies, places] = await Promise.all([getBattalionDashboard(battalionId), getMyPlaces()]);
   await connection();
   const now = new Date();
   const h = await headers();
@@ -131,57 +121,24 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
             <EditArea
               title={b.manageCompanies}
               add={
-                <div className="flex flex-col gap-5">
-                  {myOtherCompanies.length ? (
-                    <div>
-                      <p className="text-sm font-bold">{b.myCompanies}</p>
-                      <p className="text-xs text-ink-2">{b.myCompaniesHint}</p>
-                      <ul className="mt-2 flex flex-col gap-2">
-                        {myOtherCompanies.map((x) => (
-                          <li key={x.id} className="flex items-center justify-between gap-3">
-                            <span className="min-w-0 truncate text-sm font-bold">
-                              {x.name}
-                              {x.battalion_id ? <span className="ms-1.5 text-xs font-normal text-ink-2">({b.inOtherBattalion})</span> : null}
-                            </span>
-                            <ActionButton action={addMyCompanyToBattalion.bind(null, battalionId, x.id)} variant="outline">
-                              {b.addThis}
-                            </ActionButton>
-                          </li>
-                        ))}
-                      </ul>
+                <ActionForm action={addCompanyToBattalion.bind(null, battalionId)} className="flex flex-col gap-2">
+                  <p className="text-sm text-ink-2">{b.addCompanyHint}</p>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Field
+                        label={b.companyCode}
+                        name="code"
+                        required
+                        dir="ltr"
+                        maxLength={8}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        className="tracking-[0.2em] uppercase"
+                      />
                     </div>
-                  ) : null}
-
-                  <ActionForm action={createCompanyInBattalion.bind(null, battalionId)} className="flex flex-col gap-2">
-                    <p className="text-sm font-bold">{b.newCompanyInBattalion}</p>
-                    <p className="text-xs text-ink-2">{b.newCompanyHint}</p>
-                    <Field label={strings.company.createName} name="name" required maxLength={60} />
-                    <Field label={strings.company.displayName} name="display_name" required maxLength={60} autoComplete="name" />
-                    <SubmitButton variant="outline">{b.newCompanyInBattalion}</SubmitButton>
-                  </ActionForm>
-
-                  <details>
-                    <summary className="min-h-11 cursor-pointer py-2 text-sm font-bold underline">{b.withCode}</summary>
-                    <ActionForm action={addCompanyToBattalion.bind(null, battalionId)} className="mt-2 flex flex-col gap-2">
-                      <p className="text-sm text-ink-2">{b.addCompanyHint}</p>
-                      <div className="flex items-end gap-2">
-                        <div className="flex-1">
-                          <Field
-                            label={b.companyCode}
-                            name="code"
-                            required
-                            dir="ltr"
-                            maxLength={8}
-                            autoCapitalize="characters"
-                            autoComplete="off"
-                            className="tracking-[0.2em] uppercase"
-                          />
-                        </div>
-                        <SubmitButton variant="outline">{b.addCompany}</SubmitButton>
-                      </div>
-                    </ActionForm>
-                  </details>
-                </div>
+                    <SubmitButton variant="outline">{b.addCompany}</SubmitButton>
+                  </div>
+                </ActionForm>
               }
               remove={
                 companies.length ? (
@@ -205,43 +162,6 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
             />
           ) : null}
         </Section>
-
-        {ctx.isAdmin && structure.length > 1 ? (
-          <Section title={b.structure}>
-            <p className="mb-2 text-sm text-ink-2">{b.structureHint}</p>
-            <ul className="divide-y divide-rule border-y border-rule">
-              {structure.map((co) => (
-                <li key={co.company_id} className="py-2.5">
-                  <p className="text-base font-extrabold">{co.company_name}</p>
-                  {co.teams.length === 0 ? (
-                    <p className="text-sm text-ink-2">{b.noTeamsInCompany}</p>
-                  ) : (
-                    <ul className="mt-1 flex flex-col gap-2">
-                      {co.teams.map((tm) => (
-                        <li key={tm.team_id}>
-                          <ActionForm action={moveTeam.bind(null, battalionId, tm.team_id)} className="flex items-end gap-2">
-                            <span className="min-w-0 flex-1 truncate pb-3 text-sm font-bold">{tm.team_name}</span>
-                            <div className="w-40">
-                              <SelectField label={b.moveTo} name="company_id" required defaultValue="">
-                                <option value="" disabled>—</option>
-                                {structure
-                                  .filter((other) => other.company_id !== co.company_id)
-                                  .map((other) => (
-                                    <option key={other.company_id} value={other.company_id}>{other.company_name}</option>
-                                  ))}
-                              </SelectField>
-                            </div>
-                            <SubmitButton variant="outline">{b.move}</SubmitButton>
-                          </ActionForm>
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </Section>
-        ) : null}
 
         <Section title={b.members} aside={<span className="text-base font-bold text-ink-2">{ctx.members.length}</span>}>
           <ul className="divide-y divide-rule border-y border-rule">
