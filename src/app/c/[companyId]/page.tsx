@@ -2,8 +2,9 @@ import { Suspense } from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { connection } from "next/server";
-import { Trash2 } from "lucide-react";
+import { ChevronRight, Trash2 } from "lucide-react";
 import { getCompanyContext, getCompanyDashboard, type DashboardTeam } from "@/lib/company-data";
+import { getMyTeams } from "@/lib/data";
 import { clock, dayLabel, shortDate, untilLabel, weekdayOf } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section, TallyBar } from "@/components/section";
@@ -30,12 +31,21 @@ const a = strings.attendance;
 
 export const metadata = { title: c.dashboard };
 
-function TeamCard({ t }: { t: DashboardTeam }) {
+function TeamCard({ t, mine }: { t: DashboardTeam; mine: boolean }) {
   const rc = t.roll_call;
   return (
     <li className="py-3">
       <div className="flex items-baseline justify-between gap-3">
-        <h3 className="text-lg font-extrabold">{t.team_name}</h3>
+        <h3 className="text-lg font-extrabold">
+          {/* Your own team opens; other teams stay read-only summaries. */}
+          {mine ? (
+            <Link href={`/t/${t.team_id}`} className="underline decoration-rule-strong underline-offset-4">
+              {t.team_name}
+            </Link>
+          ) : (
+            t.team_name
+          )}
+        </h3>
         <span className="text-sm text-ink-2">{t.roster}</span>
       </div>
 
@@ -86,7 +96,8 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
   const companyId = Number((await params).companyId);
   // Context first: a non-member gets "not found" before the dashboard's permission check runs.
   const ctx = await getCompanyContext(companyId);
-  const [teams, places] = await Promise.all([getCompanyDashboard(companyId), getMyPlaces()]);
+  const [teams, myTeams, places] = await Promise.all([getCompanyDashboard(companyId), getMyTeams(), getMyPlaces()]);
+  const myTeamIds = new Set(myTeams.map((x) => x.id));
   await connection();
   const now = new Date();
   const h = await headers();
@@ -108,6 +119,20 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               {dayLabel(now)} · {clock(now)}
             </p>
           </div>
+          {myTeams.length ? (
+            <nav aria-label={c.myTeams} className="mt-2 flex flex-wrap gap-2">
+              {myTeams.map((x) => (
+                <Link
+                  key={x.id}
+                  href={`/t/${x.id}`}
+                  className="inline-flex min-h-11 items-center gap-1 rounded-[var(--radius-control)] border border-board-rule px-3 text-sm font-bold"
+                >
+                  <ChevronRight aria-hidden size={16} />
+                  {c.backToTeam(x.name)}
+                </Link>
+              ))}
+            </nav>
+          ) : null}
           {ctx.onDuty.length ? (
             <ul className="mt-3 border-t border-board-rule">
               {ctx.onDuty.map(({ a: x, role, member }) => (
@@ -132,7 +157,7 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
           ) : (
             <ul className="divide-y divide-rule border-y border-rule">
               {teams.map((t) => (
-                <TeamCard key={t.team_id} t={t} />
+                <TeamCard key={t.team_id} t={t} mine={myTeamIds.has(t.team_id)} />
               ))}
             </ul>
           )}
