@@ -34,7 +34,12 @@ export async function homeFor(places: Place[]): Promise<string | null> {
 }
 
 /** Teams I admin (to add to a company with one tap) and companies I admin (to add to a battalion). */
-export async function getMyAdminUnits() {
+export type AdminUnits = {
+  teams: { id: number; name: string; company_id: number | null }[];
+  companies: { id: number; name: string; battalion_id: number | null }[];
+};
+
+export async function getMyAdminUnits(): Promise<AdminUnits> {
   const userId = await getUserId();
   if (!userId) return { teams: [], companies: [] };
   const supabase = await createClient();
