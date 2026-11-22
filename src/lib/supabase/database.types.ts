@@ -473,22 +473,7 @@ isOneToOne: false
             [_ in never]: never
           }
           Functions: {
-            "company_dashboard":
-{ Args: { "p_company_id": number }; Returns: Json
-                           },
-"create_company":
-{ Args: { "p_display_name": string,"p_name": string,"p_team_id"?: number }; Returns: number
-                           },
-"create_team":
-{ Args: { "p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
-                           },
-"join_company":
-{ Args: { "p_code": string,"p_display_name": string }; Returns: number
-                           },
-"join_team":
-{ Args: { "p_code": string,"p_first_name"?: string,"p_last_name"?: string,"p_member_id"?: number }; Returns: number
-                           },
-"battalion_add_company":
+            "battalion_add_company":
 { Args: { "p_battalion_id": number,"p_company_code": string }; Returns: Json
                            },
 "battalion_dashboard":
@@ -497,26 +482,35 @@ isOneToOne: false
 "battalion_remove_company":
 { Args: { "p_battalion_id": number,"p_company_id": number }; Returns: undefined
                            },
+"company_add_team":
+{ Args: { "p_company_id": number,"p_team_code": string }; Returns: Json
+                           },
+"company_dashboard":
+{ Args: { "p_company_id": number }; Returns: Json
+                           },
 "company_leave_battalion":
 { Args: { "p_company_id": number }; Returns: undefined
+                           },
+"company_remove_team":
+{ Args: { "p_company_id": number,"p_team_id": number }; Returns: undefined
                            },
 "create_battalion":
 { Args: { "p_display_name": string,"p_name": string }; Returns: number
                            },
+"create_company":
+{ Args: { "p_display_name": string,"p_name": string,"p_team_id"?: number }; Returns: number
+                           },
+"create_team":
+{ Args: { "p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
+                           },
 "join_battalion":
 { Args: { "p_code": string,"p_display_name": string }; Returns: number
                            },
-"preview_battalion":
-{ Args: { "p_code": string }; Returns: Json
+"join_company":
+{ Args: { "p_code": string,"p_display_name": string }; Returns: number
                            },
-"regenerate_battalion_code":
-{ Args: { "p_battalion_id": number }; Returns: string
-                           },
-"company_add_team":
-{ Args: { "p_company_id": number,"p_team_code": string }; Returns: Json
-                           },
-"company_remove_team":
-{ Args: { "p_company_id": number,"p_team_id": number }; Returns: undefined
+"join_team":
+{ Args: { "p_code": string,"p_first_name"?: string,"p_last_name"?: string,"p_member_id"?: number }; Returns: number
                            },
 "link_team_to_company":
 { Args: { "p_code": string,"p_team_id": number }; Returns: number
@@ -527,11 +521,17 @@ isOneToOne: false
 "ping":
 { Args: Record<PropertyKey, never>; Returns: boolean
                            },
+"preview_battalion":
+{ Args: { "p_code": string }; Returns: Json
+                           },
 "preview_company":
 { Args: { "p_code": string }; Returns: Json
                            },
 "preview_team":
 { Args: { "p_code": string }; Returns: Json
+                           },
+"regenerate_battalion_code":
+{ Args: { "p_battalion_id": number }; Returns: string
                            },
 "regenerate_company_code":
 { Args: { "p_company_id": number }; Returns: string

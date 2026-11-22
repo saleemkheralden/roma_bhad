@@ -10,6 +10,7 @@ import { Section } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
+import { PushToggle } from "@/components/push-toggle";
 import { getTeamCompany } from "@/lib/company-data";
 import { unlinkTeam } from "../../../c/actions";
 import { buttonClass } from "@/components/button-class";
@@ -380,6 +381,10 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
             ) : null}
           </div>
         </div>
+      </Section>
+
+      <Section id="notifications" title={strings.notifications.title}>
+        <PushToggle />
       </Section>
 
       <Section id="data" title={strings.data.title}>

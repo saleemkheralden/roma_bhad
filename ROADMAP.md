@@ -89,7 +89,6 @@ Team and private tasks, due dates, a "my day" view (my private tasks + team task
 An embedded Google Calendar (then a native "today" list from the Calendar API), a read-only Google Sheets view (for example a duty list rendered as a clean table), and caching for weak reception.
 
 ### Phase 4: Leadership simulation features (weeks 8–9)
-- **Name trainer**: photo/role/nickname → name flashcards and a quiz before your התנסות starts.
 - "Handover" notes from one role-holder to the next (written in the evening, read by tomorrow's holder).
 - Notifications: daytime push for role-holders only, plus an evening summary for everyone.
 - (The basic role rotation moved into Phase 1.)
@@ -158,7 +157,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), duty 
 - [ ] ~~Roll-call "practice mode": a photo or nickname is shown and you pick the name~~ — dropped, not needed
 - [x] Notice board (#3): role-holders and staff post to the team; pinned notices, optional expiry, "new today" tag; on Today and its own tab
 - [x] Handover notes between role-holders: notices with the "role-holders only" audience, readable by staff and today's or upcoming role-holders
-- [ ] Web push for role-holders during the day; an evening summary for everyone
+- [x] Web push: role-holders get role assignments and new team tasks right away; everyone with notifications on gets an evening summary (daily Vercel Cron ~18:00)
 
 ### Phase 5: Scale
 - [x] Company level: a company holds teams (linked by the team admin with the company code); read-only company dashboard: each team's roll call today with absentees, today's roles, open/overdue tasks
