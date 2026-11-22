@@ -162,6 +162,7 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), duty 
 
 ### Phase 5: Scale
 - [x] Company level: a company holds teams (linked by the team admin with the company code); read-only company dashboard: each team's roll call today with absentees, today's roles, open/overdue tasks
+- [x] Battalion level: a battalion holds companies (added by the battalion admin with each company's staff code); staff-only dashboard with counts per company (no names). Teams, companies and battalions are set up top-down; cadets only join their team
 - [ ] Duty rotation with fairness points and blocked-out dates
 - [x] Offline roll call: every mark is queued on the phone (localStorage) and sent in order; with no reception it waits and is sent when the connection returns (survives a reload)
 - [ ] Offline app shell (open Roma with no reception) via the service worker, after #11 merges
