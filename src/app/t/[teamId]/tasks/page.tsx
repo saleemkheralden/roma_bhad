@@ -24,7 +24,7 @@ import { DayView } from "./day-view";
 import { LayoutSwitch } from "./layout-switch";
 import { NewTaskForm } from "./new-task-form";
 import { TaskBoard, type BoardCard } from "./task-board";
-import { TaskItem, type TaskContext } from "./task-item";
+import { ChecklistFor, TaskItem, type TaskContext } from "./task-item";
 
 const s = strings.tasks;
 type View = "mine" | "team" | "private";
@@ -118,9 +118,7 @@ async function Tasks({
               taskCtx.members.length,
             )
           : "",
-        steps: t.task_checklist_items.length
-          ? s.steps(t.task_checklist_items.filter((x) => x.done).length, t.task_checklist_items.length)
-          : "",
+        checklist: <ChecklistFor task={t} ctx={taskCtx} />,
         teamWide: wide,
         // Team-wide: my own part, while the task is open. Otherwise: who may tick it.
         canFinish: wide ? myId !== null && t.status === "open" : canToggle(t, myId, canCommand),

@@ -179,6 +179,23 @@ try {
   if (!count.replace(/\s/g, "").startsWith("11/13")) fail(`count after reload is ${count}`);
   step("roll call persisted after reload");
 
+  // Offline: marks are kept on the phone and sent when reception returns.
+  await ctxA.setOffline(true);
+  await cell("רון").click(); // present -> late
+  await a.getByText(/אין קליטה: סימון אחד שמור בטלפון/).waitFor();
+  if (!(await a.getByRole("button", { name: /^רון .*: מאחר/ }).count())) fail("offline mark should show right away");
+  await ctxA.setOffline(false);
+  await a.evaluate(() => window.dispatchEvent(new Event("online")));
+  await a.getByText("החיבור חזר, כל הסימונים נשלחו ✓").waitFor({ timeout: 20_000 });
+  await a.reload();
+  await a.getByRole("button", { name: /^רון .*: מאחר/ }).waitFor();
+  // Back to present (late -> absent -> unmarked -> present), online.
+  for (let i = 0; i < 3; i++) await cell("רון").click();
+  await a.waitForTimeout(1200);
+  await a.reload();
+  await a.getByRole("button", { name: /^רון .*: נוכח/ }).waitFor();
+  step("offline roll call: mark kept on the phone, sent when back online, survives reload");
+
   // ---- A: links -----------------------------------------------------------
   await a.goto(`${BASE}/t/${teamId}/links`);
   await a.getByLabel("שם").fill("יומן הצוות");
@@ -253,7 +270,7 @@ try {
     steps: ["1. לאסוף סיכומים", "2. לכתוב טיוטה", "3. להגיש"],
   });
   await newTask({ title: "למלא משוב קורס", team: true, due: tomorrowIso });
-  await newTask({ title: "להתקשר הביתה", team: false, due: todayIso });
+  await newTask({ title: "להתקשר הביתה", team: false, due: todayIso, steps: ["לבדוק מתי נוח", "להתקשר"] });
   await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
   await a.getByText("להגיש סיכום שיעור").first().waitFor();
   await a.getByText("למלא משוב קורס").first().waitFor();
@@ -264,17 +281,31 @@ try {
   await a.goto(`${BASE}/t/${teamId}/tasks`);
   await a.getByRole("radio", { name: "לוח" }).click();
   await a.locator('[data-lane="todo"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await a.waitForLoadState("networkidle"); // the layout save refreshes the page; don't click a card mid-refresh
+  const laneSaved = a.waitForResponse((r) => r.request().method() === "POST");
   await a.getByRole("button", { name: 'העברת "להתקשר הביתה" אל בתהליך' }).click();
   await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
+  await laneSaved; // reload only after the move is saved
   await a.reload();
   if ((await a.getByRole("radio", { name: "לוח" }).getAttribute("aria-checked")) !== "true") fail("task layout not remembered");
   await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).waitFor();
   await a.screenshot({ path: `${OUT}/tasks-board.png`, fullPage: true });
+  step("A moved a task to in progress on their board; layout remembered");
+  // Checklists work on board cards too: tick and add steps without lifting the card.
+  const boardCard = a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" });
+  await boardCard.getByRole("button", { name: /0\/2 שלבים/ }).click();
+  await boardCard.getByRole("checkbox", { name: "סימון השלב כבוצע: לבדוק מתי נוח" }).click();
+  await boardCard.getByText("1/2 שלבים").waitFor();
+  await boardCard.getByPlaceholder("שלב חדש").fill("לספר על השבוע");
+  await boardCard.getByRole("button", { name: "הוספת שלב" }).click();
+  await boardCard.getByText("1/3 שלבים").waitFor();
+  await a.reload();
+  await a.locator('[data-lane="doing"] [data-card]', { hasText: "להתקשר הביתה" }).getByText("1/3 שלבים").waitFor();
+  step("board card: steps ticked and added in place (1/3, persisted, card stays in progress)");
   await a.getByRole("radio", { name: "רשימה" }).click();
   await a.getByText("בתהליך", { exact: true }).first().waitFor(); // the list tags it too
   await a.waitForTimeout(500); // let the layout save before navigating
   await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
-  step("A moved a task to in progress on their board; layout remembered");
 
   // Edit a team task's text and time.
   await a.getByRole("button", { name: "עריכת המשימה: להגיש סיכום שיעור" }).first().click();
@@ -431,6 +462,32 @@ try {
   await a.getByRole("button", { name: "סגירת המשימה לכולם" }).click();
   await a.locator("summary", { hasText: "הושלמו" }).waitFor();
   step("command marked a cadet (2/13) and closed the task");
+
+  // ---- Company level ---------------------------------------------------------
+  await a.goto(`${BASE}/t/${teamId}/team#company`);
+  await a.locator("summary", { hasText: "פתיחת פלוגה חדשה" }).click();
+  const coForm = a.locator("form", { has: a.getByRole("button", { name: "פתיחת הפלוגה" }) });
+  await coForm.getByLabel("שם הפלוגה").fill("פלוגה ב׳");
+  await coForm.getByRole("button", { name: "פתיחת הפלוגה" }).click();
+  await a.waitForURL(/\/c\/\d+$/);
+  const companyUrl = a.url();
+  const card = a.locator("li", { has: a.getByRole("heading", { name: "צוות 3" }) });
+  await card.waitFor();
+  if (!(await card.getByText("11/13 נוכחים").count())) fail("dashboard should show the team's roll call (11/13)");
+  if (!(await card.getByText("שירה אבוטבול").count())) fail("dashboard should list the absentee");
+  const companyCode = (await a.locator("p[dir=ltr]").first().innerText()).trim();
+  await a.screenshot({ path: `${OUT}/company.png`, fullPage: true });
+  step("team admin created a company; dashboard shows the team's roll call and absentees");
+
+  const bCo = await b.goto(companyUrl);
+  if (bCo?.status() !== 404 && (await b.getByRole("heading", { name: "צוות 3" }).count())) fail("a non-member sees the company dashboard");
+  await b.goto(`${BASE}/join?code=${companyCode}`);
+  await b.getByLabel("השם שלך בפלוגה").fill("תמר גולן");
+  await b.getByRole("button", { name: "הצטרפות לפלוגה" }).click();
+  await b.waitForURL(/\/c\/\d+$/);
+  await b.getByRole("heading", { name: "צוות 3" }).waitFor();
+  if (await b.locator("summary", { hasText: "עריכת תפקידים פלוגתיים" }).count()) fail("a plain company member can manage roles");
+  step("company: hidden from non-members; joined with the code, read-only for a plain member");
 
   // ---- Icons are served -------------------------------------------------
   for (const path of ["/icons/icon-192.png", "/icons/icon-512.png", "/apple-icon.png", "/icon.png"]) {

@@ -1,6 +1,7 @@
 import { Suspense } from "react";
+import Link from "next/link";
 import { headers } from "next/headers";
-import { ChevronDown, Trash2 } from "lucide-react";
+import { ChevronDown, Download, Trash2 } from "lucide-react";
 import { fullName, getCalendars, getTeamContext } from "@/lib/data";
 import { calendarAccess, calendarAccountEmail } from "@/lib/google-calendar";
 import { shortDate, weekdayOf } from "@/lib/dates";
@@ -10,11 +11,15 @@ import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/compon
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import { PushToggle } from "@/components/push-toggle";
+import { getTeamCompany } from "@/lib/company-data";
+import { unlinkTeam } from "../../../c/actions";
+import { buttonClass } from "@/components/button-class";
 import {
   addCalendar,
   addAssignment,
   addMember,
   addRole,
+  deleteTeam,
   importMembers,
   regenerateInvite,
   removeAssignment,
@@ -32,6 +37,8 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
   const [ctx, calendars] = await Promise.all([getTeamContext(teamId), getCalendars(teamId)]);
   const { can_manage: canManage, is_admin: isAdmin } = ctx.permissions;
   const c = strings.calendar;
+  const company = await getTeamCompany(ctx.team.company_id);
+  const co = strings.company;
   const romaAccount = calendarAccountEmail();
   const access = await Promise.all(calendars.map((cal) => calendarAccess(cal.external_id)));
   const h = await headers();
@@ -252,6 +259,33 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
         ) : null}
       </Section>
 
+      {ctx.team.company_id || isAdmin ? (
+        <Section id="company" title={co.section}>
+          {ctx.team.company_id ? (
+            <div className="flex flex-col gap-3">
+              <p className="text-base">{company ? co.linkedTo(company.name) : co.linkedHidden}</p>
+              {company ? (
+                <Link href={`/c/${company.id}`} className={buttonClass("outline", "self-start")}>
+                  {co.openDashboard}
+                </Link>
+              ) : null}
+              {isAdmin ? (
+                <EditArea
+                  title={co.unlink}
+                  remove={
+                    <ActionButton action={unlinkTeam.bind(null, teamId)} confirm={co.confirmUnlink} variant="danger">
+                      {co.unlink}
+                    </ActionButton>
+                  }
+                />
+              ) : null}
+            </div>
+          ) : (
+            <p className="text-base text-ink-2">{co.notLinked}</p>
+          )}
+        </Section>
+      ) : null}
+
       <Section id="calendar" title={c.settings}>
         {calendars.length === 0 ? (
           <p className="text-base text-ink-2">{c.empty}</p>
@@ -351,6 +385,49 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
 
       <Section id="notifications" title={strings.notifications.title}>
         <PushToggle />
+      </Section>
+
+      <Section id="data" title={strings.data.title}>
+        <p className="text-sm text-ink-2">{strings.data.hint}</p>
+        <div className="mt-3 flex flex-col gap-3">
+          <div>
+            {/* A plain link: the route answers with a file download. */}
+            <a href={`/t/${teamId}/export?scope=me`} download className={buttonClass("outline")}>
+              <Download aria-hidden size={18} />
+              {strings.data.exportMine}
+            </a>
+            <p className="mt-1 text-xs text-ink-2">{strings.data.exportMineHint}</p>
+          </div>
+          {isAdmin ? (
+            <div>
+              <a href={`/t/${teamId}/export?scope=team`} download className={buttonClass("outline")}>
+                <Download aria-hidden size={18} />
+                {strings.data.exportTeam}
+              </a>
+              <p className="mt-1 text-xs text-ink-2">{strings.data.exportTeamHint}</p>
+            </div>
+          ) : null}
+        </div>
+        {isAdmin ? (
+          <EditArea
+            title={strings.data.deleteTitle}
+            remove={
+              <ActionForm action={deleteTeam.bind(null, teamId)} className="flex flex-col gap-3">
+                <p className="rounded-[var(--radius-cell)] bg-absent-wash px-3 py-2 text-sm font-medium text-absent-ink">
+                  {strings.data.deleteHint}
+                </p>
+                <Field
+                  label={strings.data.confirmLabel(ctx.team.name)}
+                  name="confirm_name"
+                  required
+                  autoComplete="off"
+                  maxLength={60}
+                />
+                <SubmitButton variant="danger">{strings.data.deleteSubmit}</SubmitButton>
+              </ActionForm>
+            }
+          />
+        ) : null}
       </Section>
 
       <form action="/auth/signout" method="post" className="mt-12">
