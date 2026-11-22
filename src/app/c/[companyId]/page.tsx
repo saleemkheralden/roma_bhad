@@ -11,7 +11,11 @@ import { Section, TallyBar } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
+import { PlacesMenu } from "@/components/places-menu";
+import { getMyPlaces } from "@/lib/places";
 import {
+  addTeamToCompany,
+  removeTeamFromCompany,
   addCompanyAssignment,
   addCompanyRole,
   regenerateCompanyCode,
@@ -20,6 +24,7 @@ import {
   removeCompanyRole,
   setCompanyAdmin,
 } from "../actions";
+import { leaveBattalion } from "../../b/actions";
 
 const c = strings.company;
 const a = strings.attendance;
@@ -91,7 +96,7 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
   const companyId = Number((await params).companyId);
   // Context first: a non-member gets "not found" before the dashboard's permission check runs.
   const ctx = await getCompanyContext(companyId);
-  const [teams, myTeams] = await Promise.all([getCompanyDashboard(companyId), getMyTeams()]);
+  const [teams, myTeams, places] = await Promise.all([getCompanyDashboard(companyId), getMyTeams(), getMyPlaces()]);
   const myTeamIds = new Set(myTeams.map((x) => x.id));
   await connection();
   const now = new Date();
@@ -108,7 +113,7 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               <Link href="/" className="text-[1.375rem] font-extrabold leading-tight">
                 {strings.app.name}
               </Link>
-              <p className="truncate text-sm text-board-dim">{ctx.company.name}</p>
+              <PlacesMenu current={{ kind: "company", id: companyId, name: ctx.company.name }} places={places} />
             </div>
             <p className="shrink-0 text-sm font-bold text-now">
               {dayLabel(now)} · {clock(now)}
@@ -156,6 +161,50 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               ))}
             </ul>
           )}
+          {ctx.isAdmin ? (
+            <EditArea
+              title={c.manageTeams}
+              add={
+                <ActionForm action={addTeamToCompany.bind(null, companyId)} className="flex flex-col gap-2">
+                  <p className="text-sm text-ink-2">{c.addTeamHint}</p>
+                  <div className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Field
+                        label={c.teamCode}
+                        name="code"
+                        required
+                        dir="ltr"
+                        maxLength={8}
+                        autoCapitalize="characters"
+                        autoComplete="off"
+                        className="tracking-[0.2em] uppercase"
+                      />
+                    </div>
+                    <SubmitButton variant="outline">{c.addTeam}</SubmitButton>
+                  </div>
+                </ActionForm>
+              }
+              remove={
+                teams.length ? (
+                  <ul className="flex flex-col gap-2">
+                    {teams.map((t) => (
+                      <li key={t.team_id} className="flex items-center justify-between gap-3">
+                        <span className="truncate text-sm font-bold">{t.team_name}</span>
+                        <ActionButton
+                          action={removeTeamFromCompany.bind(null, companyId, t.team_id)}
+                          confirm={c.confirmRemoveTeam(t.team_name)}
+                          label={`${strings.common.remove} ${t.team_name}`}
+                          variant="icon-danger"
+                        >
+                          <Trash2 aria-hidden size={18} />
+                        </ActionButton>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null
+              }
+            />
+          ) : null}
         </Section>
 
         <Section title={c.assignments}>
@@ -312,6 +361,22 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
             />
           ) : null}
         </Section>
+
+        {ctx.company.battalion_id ? (
+          <Section title={strings.battalion.title}>
+            <p className="text-base">{strings.battalion.companyLinked}</p>
+            {ctx.isAdmin ? (
+              <EditArea
+                title={strings.battalion.leave}
+                remove={
+                  <ActionButton action={leaveBattalion.bind(null, companyId)} confirm={strings.battalion.confirmLeave} variant="danger">
+                    {strings.battalion.leave}
+                  </ActionButton>
+                }
+              />
+            ) : null}
+          </Section>
+        ) : null}
 
         <Section title={c.invite}>
           <div className="rounded-[var(--radius-control)] border border-rule bg-paper p-4">

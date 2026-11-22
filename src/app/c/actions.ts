@@ -33,29 +33,37 @@ async function run(
   return { ok: true };
 }
 
-/** From a team's page: create a company and link this team to it. */
-export async function createCompany(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+/** Create a company (from /new). The creator becomes its admin; teams are added from the company page. */
+export async function createCompany(_p: ActionResult, formData: FormData): Promise<ActionResult> {
   const name = text(formData, "name");
   const displayName = text(formData, "display_name");
   if (!name || !displayName) return { error: strings.common.genericError };
   const supabase = await createClient();
-  const { data, error } = await supabase.rpc("create_company", {
-    p_name: name,
-    p_display_name: displayName,
-    p_team_id: teamId,
-  });
+  const { data, error } = await supabase.rpc("create_company", { p_name: name, p_display_name: displayName });
   if (error || !data) return fail(error);
   redirect(`/c/${data}`);
 }
 
-export async function linkTeam(teamId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+/** Company admins add a team with the team's own code (top-down; cadets never deal with companies). */
+export async function addTeamToCompany(companyId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
   const supabase = await createClient();
-  const { error } = await supabase.rpc("link_team_to_company", { p_team_id: teamId, p_code: text(formData, "code") });
+  const { data, error } = await supabase.rpc("company_add_team", { p_company_id: companyId, p_team_code: text(formData, "code") });
+  if (error?.code === "P0002") return { error: c.badTeamCode };
+  if (error?.code === "23505") return { error: c.teamTaken };
   if (error) return fail(error);
   refresh();
-  return { ok: true, message: c.linked };
+  return { ok: true, message: c.teamAdded((data as { team_name?: string } | null)?.team_name ?? "") };
 }
 
+export async function removeTeamFromCompany(companyId: number, teamId: number) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("company_remove_team", { p_company_id: companyId, p_team_id: teamId });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true };
+}
+
+/** A team admin detaches the team (e.g. it was added to the wrong company). */
 export async function unlinkTeam(teamId: number) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("link_team_to_company", { p_team_id: teamId, p_code: null as unknown as string });

@@ -4,10 +4,12 @@ import { getTeamContext } from "@/lib/data";
 import { clock, dayLabel } from "@/lib/dates";
 import { TeamBoard } from "@/components/board";
 import { TabBar } from "@/components/tab-bar";
+import { PlacesMenu } from "@/components/places-menu";
+import { getMyPlaces } from "@/lib/places";
 
 async function Board({ params }: { params: Promise<{ teamId: string }> }) {
   const teamId = Number((await params).teamId);
-  const ctx = await getTeamContext(teamId);
+  const [ctx, places] = await Promise.all([getTeamContext(teamId), getMyPlaces()]);
   await connection();
   const now = new Date();
   return (
@@ -22,6 +24,7 @@ async function Board({ params }: { params: Promise<{ teamId: string }> }) {
         today={ctx.today}
         teamId={teamId}
         canManage={ctx.permissions.can_manage}
+        switcher={<PlacesMenu current={{ kind: "team", id: teamId, name: ctx.team.name }} places={places} />}
       />
       <TabBar teamId={teamId} />
     </>

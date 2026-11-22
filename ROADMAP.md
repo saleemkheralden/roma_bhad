@@ -154,14 +154,15 @@ Multiple teams and a company view (התנסות מ"פ sees all its teams), duty 
 - [ ] Error states (sheet not shared, quota exceeded)
 
 ### Phase 4: Simulation features
-- [ ] Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)
-- [ ] Roll-call "practice mode": a photo or nickname is shown and you pick the name
+- [ ] ~~Name-trainer flashcards (simple spaced repetition: missed cards come back sooner)~~ — dropped, not needed
+- [ ] ~~Roll-call "practice mode": a photo or nickname is shown and you pick the name~~ — dropped, not needed
 - [x] Notice board (#3): role-holders and staff post to the team; pinned notices, optional expiry, "new today" tag; on Today and its own tab
 - [x] Handover notes between role-holders: notices with the "role-holders only" audience, readable by staff and today's or upcoming role-holders
 - [ ] Web push for role-holders during the day; an evening summary for everyone
 
 ### Phase 5: Scale
 - [x] Company level: a company holds teams (linked by the team admin with the company code); read-only company dashboard: each team's roll call today with absentees, today's roles, open/overdue tasks
+- [x] Battalion level: a battalion holds companies (added by the battalion admin with each company's staff code); staff-only dashboard with counts per company (no names). Teams, companies and battalions are set up top-down; cadets only join their team
 - [ ] Duty rotation with fairness points and blocked-out dates
 - [x] Offline roll call: every mark is queued on the phone (localStorage) and sent in order; with no reception it waits and is sent when the connection returns (survives a reload)
 - [ ] Offline app shell (open Roma with no reception) via the service worker, after #11 merges

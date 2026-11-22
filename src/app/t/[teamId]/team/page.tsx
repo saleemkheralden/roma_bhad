@@ -11,7 +11,7 @@ import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/compon
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import { getTeamCompany } from "@/lib/company-data";
-import { createCompany, linkTeam, unlinkTeam } from "../../../c/actions";
+import { unlinkTeam } from "../../../c/actions";
 import { buttonClass } from "@/components/button-class";
 import {
   addCalendar,
@@ -280,30 +280,7 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
               ) : null}
             </div>
           ) : (
-            <>
-              <p className="text-base text-ink-2">{co.notLinked}</p>
-              <EditArea
-                title={co.linkWithCode}
-                add={
-                  <ActionForm action={linkTeam.bind(null, teamId)} className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <Field label={co.codeLabel} name="code" required dir="ltr" maxLength={8} autoCapitalize="characters" className="tracking-[0.2em] uppercase" />
-                    </div>
-                    <SubmitButton variant="outline">{co.link}</SubmitButton>
-                  </ActionForm>
-                }
-              />
-              <EditArea
-                title={co.createTitle}
-                add={
-                  <ActionForm action={createCompany.bind(null, teamId)} className="flex flex-col gap-2">
-                    <Field label={co.createName} name="name" placeholder={co.createNameHint} required maxLength={60} />
-                    <Field label={co.displayName} name="display_name" required maxLength={60} defaultValue={ctx.me ? fullName(ctx.me) : ""} />
-                    <SubmitButton variant="outline">{co.create}</SubmitButton>
-                  </ActionForm>
-                }
-              />
-            </>
+            <p className="text-base text-ink-2">{co.notLinked}</p>
           )}
         </Section>
       ) : null}
