@@ -179,8 +179,8 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
                 <div className="flex flex-col gap-5">
                   {myOtherTeams.length ? (
                     <div>
-                      <p className="text-sm font-bold">{c.myTeams}</p>
-                      <p className="text-xs text-ink-2">{c.myTeamsHint}</p>
+                      <p className="text-sm font-bold">{c.myAdminTeams}</p>
+                      <p className="text-xs text-ink-2">{c.myAdminTeamsHint}</p>
                       <ul className="mt-2 flex flex-col gap-2">
                         {myOtherTeams.map((x) => (
                           <li key={x.id} className="flex items-center justify-between gap-3">
