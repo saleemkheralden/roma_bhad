@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import { strings } from "@/lib/strings";
 import { fullName, type DutyRow, type Member } from "@/lib/data";
@@ -27,6 +28,7 @@ export function TeamBoard({
   today,
   teamId,
   canManage,
+  switcher,
 }: {
   teamName: string;
   dayLabel: string;
@@ -37,6 +39,8 @@ export function TeamBoard({
   today: string;
   teamId: number;
   canManage: boolean;
+  /** The places menu (team name + switcher); falls back to the plain team name. */
+  switcher?: ReactNode;
 }) {
   return (
     <header className="bg-board pb-3 pt-[max(env(safe-area-inset-top),1rem)] text-board-ink">
@@ -46,7 +50,7 @@ export function TeamBoard({
           <Link href="/" className="text-[1.375rem] font-extrabold leading-tight">
             {strings.app.name}
           </Link>
-          <p className="truncate text-sm text-board-dim">{teamName}</p>
+          {switcher ?? <p className="truncate text-sm text-board-dim">{teamName}</p>}
         </div>
         <p className="shrink-0 text-sm font-bold text-now">
           {dayLabel} · {time}
