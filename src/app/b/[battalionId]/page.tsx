@@ -4,7 +4,7 @@ import { connection } from "next/server";
 import { Trash2 } from "lucide-react";
 import { getBattalionContext, getBattalionDashboard, getBattalionStructure, type DashboardCompany, type StructureCompany } from "@/lib/battalion-data";
 import { getMyAdminUnits, getMyPlaces } from "@/lib/places";
-import { clock, dayLabel } from "@/lib/dates";
+import { clock, dayLabel, shortDate, untilLabel, weekdayOf } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section, TallyBar } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
@@ -12,6 +12,10 @@ import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import { PlacesMenu } from "@/components/places-menu";
 import {
+  addBattalionAssignment,
+  addBattalionRole,
+  removeBattalionAssignment,
+  removeBattalionRole,
   addMyCompanyToBattalion,
   createCompanyInBattalion,
   moveTeam,
@@ -97,6 +101,14 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
   const now = new Date();
   const h = await headers();
   const inviteUrl = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}/join?code=${ctx.battalion.invite_code}`;
+  const assignments = [...ctx.onDuty, ...ctx.upcoming];
+  // Cadets for the role picker, grouped by company · team.
+  const peopleByTeam = [
+    ...ctx.people.reduce(
+      (map, p) => map.set(`${p.company_name} · ${p.team_name}`, [...(map.get(`${p.company_name} · ${p.team_name}`) ?? []), p]),
+      new Map<string, typeof ctx.people>(),
+    ),
+  ];
 
   return (
     <>
@@ -109,6 +121,21 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
           <p className="shrink-0 text-sm font-bold text-now">
             {dayLabel(now)} · {clock(now)}
           </p>
+        </div>
+        <div className="mx-auto max-w-xl px-4">
+          {ctx.onDuty.length ? (
+            <ul aria-label={b.onDuty} className="mt-3 border-t border-board-rule">
+              {ctx.onDuty.map(({ a: x, role, member }) => (
+                <li key={x.id} className="flex h-10 items-center gap-3 border-b border-board-2 text-[0.9375rem] last:border-b-0">
+                  <span className="w-[6.5rem] truncate font-bold text-now">{role.name}</span>
+                  <span className="flex-1 truncate">{member.name}{member.detail ? ` (${member.detail})` : ""}</span>
+                  <span className="text-sm text-board-dim">{untilLabel(x.end_date, ctx.today)}</span>
+                </li>
+              ))}
+            </ul>
+          ) : ctx.roles.length ? (
+            <p className="mt-3 border-t border-board-rule pt-3 text-base text-board-dim">{b.nobodyOnDuty}</p>
+          ) : null}
         </div>
       </header>
 
@@ -243,6 +270,132 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
           </Section>
         ) : null}
 
+        <Section title={b.assignments}>
+          {assignments.length === 0 ? (
+            <p className="text-base text-ink-2">{strings.team.noAssignments}</p>
+          ) : (
+            <ul className="divide-y divide-rule border-y border-rule">
+              {assignments.map(({ a: x, role, member }) => (
+                <li key={x.id} className="py-2.5">
+                  <p className="text-base">
+                    <span className="font-bold">{role.name}</span> · {member.name}
+                    {member.detail ? <span className="text-sm text-ink-2"> ({member.detail})</span> : null}
+                  </p>
+                  <p className="text-xs text-ink-2">
+                    {weekdayOf(x.start_date)} {shortDate(x.start_date)} – {weekdayOf(x.end_date)} {shortDate(x.end_date)}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          )}
+          {ctx.canManage && ctx.roles.length ? (
+            <EditArea
+              title={b.manageAssignments}
+              add={
+                <ActionForm action={addBattalionAssignment.bind(null, battalionId)} className="flex flex-col gap-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <SelectField label={strings.team.role} name="role_id" required defaultValue="">
+                      <option value="" disabled>—</option>
+                      {ctx.roles.map((r) => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </SelectField>
+                    <SelectField label={strings.team.member} name="person" required defaultValue="">
+                      <option value="" disabled>—</option>
+                      {ctx.members.length ? (
+                        <optgroup label={b.staffGroup}>
+                          {ctx.members.map((m) => (
+                            <option key={m.id} value={`m:${m.id}`}>{m.display_name}</option>
+                          ))}
+                        </optgroup>
+                      ) : null}
+                      {peopleByTeam.map(([group, list]) => (
+                        <optgroup key={group} label={group}>
+                          {list.map((p) => (
+                            <option key={p.team_member_id} value={`t:${p.team_member_id}`}>{p.name}</option>
+                          ))}
+                        </optgroup>
+                      ))}
+                    </SelectField>
+                    <Field label={strings.team.from} name="start_date" type="date" required defaultValue={ctx.today} />
+                    <Field label={strings.team.to} name="end_date" type="date" required defaultValue={ctx.today} />
+                  </div>
+                  <SubmitButton variant="outline">{strings.team.assign}</SubmitButton>
+                </ActionForm>
+              }
+              remove={
+                assignments.length ? (
+                  <ul className="flex flex-col gap-2">
+                    {assignments.map(({ a: x, role, member }) => (
+                      <li key={x.id} className="flex items-center justify-between gap-3">
+                        <span className="truncate text-sm">
+                          <span className="font-bold">{role.name}</span> · {member.name} · {shortDate(x.start_date)}
+                        </span>
+                        <ActionButton
+                          action={removeBattalionAssignment.bind(null, battalionId, x.id)}
+                          label={`${strings.common.remove} ${role.name} ${member.name}`}
+                          variant="icon-danger"
+                        >
+                          <Trash2 aria-hidden size={18} />
+                        </ActionButton>
+                      </li>
+                    ))}
+                  </ul>
+                ) : null
+              }
+            />
+          ) : null}
+        </Section>
+
+        <Section title={b.roles}>
+          {ctx.roles.length ? (
+            <ul className="flex flex-wrap gap-2">
+              {ctx.roles.map((r) => (
+                <li key={r.id} className="rounded-[var(--radius-cell)] border border-rule bg-paper px-3 py-2 text-base font-bold">
+                  {r.name}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-base text-ink-2">{b.noRoles}</p>
+          )}
+          {ctx.canManage ? (
+            <>
+              <p className="mt-2 text-xs text-ink-2">{b.rolesHint}</p>
+              <EditArea
+                title={b.manageRoles}
+                add={
+                  <ActionForm action={addBattalionRole.bind(null, battalionId)} className="flex items-end gap-2">
+                    <div className="flex-1">
+                      <Field label={strings.team.roleName} name="name" required maxLength={40} />
+                    </div>
+                    <SubmitButton variant="outline">{strings.team.addRole}</SubmitButton>
+                  </ActionForm>
+                }
+                remove={
+                  ctx.roles.length ? (
+                    <ul className="flex flex-col gap-2">
+                      {ctx.roles.map((r) => (
+                        <li key={r.id} className="flex items-center justify-between gap-3">
+                          <span className="text-sm font-bold">{r.name}</span>
+                          <ActionButton
+                            action={removeBattalionRole.bind(null, battalionId, r.id)}
+                            confirm={`${strings.common.remove}: ${r.name}?`}
+                            label={`${strings.common.remove} ${r.name}`}
+                            variant="icon-danger"
+                          >
+                            <Trash2 aria-hidden size={18} />
+                          </ActionButton>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : null
+                }
+              />
+            </>
+          ) : null}
+        </Section>
+
         <Section title={b.members} aside={<span className="text-base font-bold text-ink-2">{ctx.members.length}</span>}>
           <ul className="divide-y divide-rule border-y border-rule">
             {ctx.members.map((m) => (
@@ -293,6 +446,7 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
           ) : null}
         </Section>
 
+        {ctx.me ? (
         <Section title={b.invite}>
           <div className="rounded-[var(--radius-control)] border border-rule bg-paper p-4">
             <p dir="ltr" className="text-center text-[2rem] font-extrabold tracking-[0.2em]">
@@ -309,6 +463,7 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
             </div>
           </div>
         </Section>
+        ) : null}
       </main>
     </>
   );
