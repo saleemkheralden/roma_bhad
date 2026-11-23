@@ -6,6 +6,7 @@ import { strings } from "@/lib/strings";
 import { LANES, type Lane } from "@/lib/tasks";
 import type { ActionResult } from "@/components/ui";
 import { useBoardDrag, type DropTarget } from "./use-board-drag";
+import { LinkedText } from "@/components/linked-text";
 
 const s = strings.tasks;
 
@@ -210,7 +211,7 @@ function Card({
       <div className="flex items-start gap-2">
         <div className="min-w-0 flex-1">
           <p className={`text-base font-bold leading-snug ${done ? "text-ink-2 line-through" : ""}`}>{card.title}</p>
-          {card.notes ? <p className="truncate text-sm text-ink-2">{card.notes}</p> : null}
+          {card.notes ? <p className="truncate text-sm text-ink-2"><LinkedText text={card.notes} /></p> : null}
           <p className="mt-1 flex flex-wrap gap-x-2 text-xs text-ink-2">
             {card.due ? (
               <span className={card.overdue && !done ? "font-bold text-absent-ink" : "font-bold text-ink"}>

@@ -4,6 +4,7 @@ import { useState, useTransition, type ReactNode } from "react";
 import { Check } from "lucide-react";
 import { strings } from "@/lib/strings";
 import type { ActionResult } from "@/components/ui";
+import { LinkedText } from "@/components/linked-text";
 
 const s = strings.tasks;
 
@@ -72,7 +73,7 @@ export function TaskRow({
       </button>
       <div className="min-w-0 flex-1">
         <p className={`text-base font-bold leading-snug ${done ? "text-ink-2 line-through" : ""}`}>{title}</p>
-        {notes ? <p className="truncate text-sm text-ink-2">{notes}</p> : null}
+        {notes ? <p className="truncate text-sm text-ink-2"><LinkedText text={notes} /></p> : null}
         <p className="mt-0.5 flex flex-wrap gap-x-2 text-xs text-ink-2">
           {due ? (
             <span className={overdue && !done ? "font-bold text-absent-ink" : "font-bold text-ink"}>

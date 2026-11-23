@@ -5,6 +5,7 @@ import { Check, ChevronDown } from "lucide-react";
 import { strings } from "@/lib/strings";
 import { Button } from "@/components/ui";
 import type { ActionResult } from "@/components/ui";
+import { LinkedText } from "@/components/linked-text";
 
 const s = strings.tasks;
 
@@ -97,7 +98,7 @@ export function TeamWideTaskRow({
         </button>
         <div className="min-w-0 flex-1">
           <p className={`text-base font-bold leading-snug ${mine ? "text-ink-2 line-through" : ""}`}>{title}</p>
-          {notes ? <p className="truncate text-sm text-ink-2">{notes}</p> : null}
+          {notes ? <p className="truncate text-sm text-ink-2"><LinkedText text={notes} /></p> : null}
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-ink-2">
             {due ? (
               <span className={overdue ? "font-bold text-absent-ink" : "font-bold text-ink"}>

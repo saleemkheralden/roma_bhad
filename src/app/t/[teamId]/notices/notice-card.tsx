@@ -5,6 +5,7 @@ import { strings } from "@/lib/strings";
 import { ActionButton } from "@/components/action-button";
 import { removeNotice, setNoticePinned, updateNotice } from "../actions";
 import { EditNotice } from "./notice-form";
+import { LinkedText } from "@/components/linked-text";
 
 const s = strings.notices;
 
@@ -65,7 +66,7 @@ export function NoticeCard({
         {n.title}
       </h3>
       {n.body ? (
-        <p className={`mt-1 whitespace-pre-line text-base text-ink ${compact ? "line-clamp-2" : ""}`}>{n.body}</p>
+        <p className={`mt-1 whitespace-pre-line text-base text-ink ${compact ? "line-clamp-2" : ""}`}><LinkedText text={n.body} /></p>
       ) : null}
       <p className="mt-2 text-sm text-ink-2">
         {s.byline(author(n, ctx.roster), when(n.created_at, ctx.today))}
