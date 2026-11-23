@@ -1,6 +1,8 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { ChevronDown, Plus } from "lucide-react";
 import { getNotices, getTeamContext } from "@/lib/data";
+import { isoDate } from "@/lib/dates";
 import { strings } from "@/lib/strings";
 import { Section } from "@/components/section";
 import { postNotice } from "../actions";
@@ -11,8 +13,9 @@ const s = strings.notices;
 
 async function Notices({ params }: { params: Promise<{ teamId: string }> }) {
   const teamId = Number((await params).teamId);
-  const ctx = await getTeamContext(teamId);
-  const notices = await getNotices(teamId, ctx.today);
+  // In parallel: today's date is computed here (Israel time, same as the database).
+  await connection();
+  const [ctx, notices] = await Promise.all([getTeamContext(teamId), getNotices(teamId, isoDate())]);
   const canCommand = ctx.permissions.can_command;
   const noticeCtx: NoticeContext = {
     teamId,
