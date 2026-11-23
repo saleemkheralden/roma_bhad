@@ -12,8 +12,10 @@ import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import { PlacesMenu } from "@/components/places-menu";
-import { getMyPlaces } from "@/lib/places";
+import { getMyAdminUnits, getMyPlaces } from "@/lib/places";
 import {
+  addMyTeamToCompany,
+  createTeamInCompany,
   addTeamToCompany,
   removeTeamFromCompany,
   addCompanyAssignment,
@@ -96,13 +98,22 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
   const companyId = Number((await params).companyId);
   // Context first: a non-member gets "not found" before the dashboard's permission check runs.
   const ctx = await getCompanyContext(companyId);
-  const [teams, myTeams, places] = await Promise.all([getCompanyDashboard(companyId), getMyTeams(), getMyPlaces()]);
+  const [teams, myTeams, places, adminUnits] = await Promise.all([
+    getCompanyDashboard(companyId),
+    getMyTeams(),
+    getMyPlaces(),
+    getMyAdminUnits(),
+  ]);
+  // Teams I admin that aren't in this company yet: one tap to add.
+  const myOtherTeams = adminUnits.teams.filter((x) => x.company_id !== companyId);
   const myTeamIds = new Set(myTeams.map((x) => x.id));
   await connection();
   const now = new Date();
   const h = await headers();
   const inviteUrl = `${h.get("x-forwarded-proto") ?? "http"}://${h.get("host")}/join?code=${ctx.company.invite_code}`;
   const assignments = [...ctx.onDuty, ...ctx.upcoming];
+  // The company's people come from its teams, grouped by team for the role picker and the list.
+  const peopleByTeam = [...ctx.people.reduce((map, p) => map.set(p.team_name, [...(map.get(p.team_name) ?? []), p]), new Map<string, typeof ctx.people>())];
 
   return (
     <>
@@ -138,7 +149,7 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               {ctx.onDuty.map(({ a: x, role, member }) => (
                 <li key={x.id} className="flex h-10 items-center gap-3 border-b border-board-2 text-[0.9375rem] last:border-b-0">
                   <span className="w-[6.5rem] truncate font-bold text-now">{role.name}</span>
-                  <span className="flex-1 truncate">{member.display_name}</span>
+                  <span className="flex-1 truncate">{member.name}{member.detail ? ` (${member.detail})` : ""}</span>
                   <span className="text-sm text-board-dim">{untilLabel(x.end_date, ctx.today)}</span>
                 </li>
               ))}
@@ -165,24 +176,60 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
             <EditArea
               title={c.manageTeams}
               add={
-                <ActionForm action={addTeamToCompany.bind(null, companyId)} className="flex flex-col gap-2">
-                  <p className="text-sm text-ink-2">{c.addTeamHint}</p>
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <Field
-                        label={c.teamCode}
-                        name="code"
-                        required
-                        dir="ltr"
-                        maxLength={8}
-                        autoCapitalize="characters"
-                        autoComplete="off"
-                        className="tracking-[0.2em] uppercase"
-                      />
+                <div className="flex flex-col gap-5">
+                  {myOtherTeams.length ? (
+                    <div>
+                      <p className="text-sm font-bold">{c.myAdminTeams}</p>
+                      <p className="text-xs text-ink-2">{c.myAdminTeamsHint}</p>
+                      <ul className="mt-2 flex flex-col gap-2">
+                        {myOtherTeams.map((x) => (
+                          <li key={x.id} className="flex items-center justify-between gap-3">
+                            <span className="min-w-0 truncate text-sm font-bold">
+                              {x.name}
+                              {x.company_id ? <span className="ms-1.5 text-xs font-normal text-ink-2">({c.inOtherCompany})</span> : null}
+                            </span>
+                            <ActionButton action={addMyTeamToCompany.bind(null, companyId, x.id)} variant="outline">
+                              {c.addThis}
+                            </ActionButton>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <SubmitButton variant="outline">{c.addTeam}</SubmitButton>
-                  </div>
-                </ActionForm>
+                  ) : null}
+
+                  <ActionForm action={createTeamInCompany.bind(null, companyId)} className="flex flex-col gap-2">
+                    <p className="text-sm font-bold">{c.newTeamInCompany}</p>
+                    <p className="text-xs text-ink-2">{c.newTeamHint}</p>
+                    <Field label={strings.create.teamName} name="name" required maxLength={60} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Field label={strings.create.yourFirstName} name="first_name" required maxLength={40} autoComplete="given-name" />
+                      <Field label={strings.create.yourLastName} name="last_name" maxLength={40} autoComplete="family-name" />
+                    </div>
+                    <SubmitButton variant="outline">{c.newTeamInCompany}</SubmitButton>
+                  </ActionForm>
+
+                  <details>
+                    <summary className="min-h-11 cursor-pointer py-2 text-sm font-bold underline">{c.withCode}</summary>
+                    <ActionForm action={addTeamToCompany.bind(null, companyId)} className="mt-2 flex flex-col gap-2">
+                      <p className="text-sm text-ink-2">{c.addTeamHint}</p>
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <Field
+                            label={c.teamCode}
+                            name="code"
+                            required
+                            dir="ltr"
+                            maxLength={8}
+                            autoCapitalize="characters"
+                            autoComplete="off"
+                            className="tracking-[0.2em] uppercase"
+                          />
+                        </div>
+                        <SubmitButton variant="outline">{c.addTeam}</SubmitButton>
+                      </div>
+                    </ActionForm>
+                  </details>
+                </div>
               }
               remove={
                 teams.length ? (
@@ -215,7 +262,8 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               {assignments.map(({ a: x, role, member }) => (
                 <li key={x.id} className="py-2.5">
                   <p className="text-base">
-                    <span className="font-bold">{role.name}</span> · {member.display_name}
+                    <span className="font-bold">{role.name}</span> · {member.name}
+                    {member.detail ? <span className="text-sm text-ink-2"> ({member.detail})</span> : null}
                   </p>
                   <p className="text-xs text-ink-2">
                     {weekdayOf(x.start_date)} {shortDate(x.start_date)} – {weekdayOf(x.end_date)} {shortDate(x.end_date)}
@@ -236,11 +284,22 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
                         <option key={r.id} value={r.id}>{r.name}</option>
                       ))}
                     </SelectField>
-                    <SelectField label={strings.team.member} name="member_id" required defaultValue="">
+                    <SelectField label={strings.team.member} name="person" required defaultValue="">
                       <option value="" disabled>—</option>
-                      {ctx.members.map((m) => (
-                        <option key={m.id} value={m.id}>{m.display_name}</option>
+                      {peopleByTeam.map(([teamName, list]) => (
+                        <optgroup key={teamName} label={teamName}>
+                          {list.map((p) => (
+                            <option key={p.team_member_id} value={`t:${p.team_member_id}`}>{p.name}</option>
+                          ))}
+                        </optgroup>
                       ))}
+                      {ctx.members.length ? (
+                        <optgroup label={c.staffGroup}>
+                          {ctx.members.map((m) => (
+                            <option key={m.id} value={`m:${m.id}`}>{m.display_name}</option>
+                          ))}
+                        </optgroup>
+                      ) : null}
                     </SelectField>
                     <Field label={strings.team.from} name="start_date" type="date" required defaultValue={ctx.today} />
                     <Field label={strings.team.to} name="end_date" type="date" required defaultValue={ctx.today} />
@@ -254,11 +313,11 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
                     {assignments.map(({ a: x, role, member }) => (
                       <li key={x.id} className="flex items-center justify-between gap-3">
                         <span className="truncate text-sm">
-                          <span className="font-bold">{role.name}</span> · {member.display_name} · {shortDate(x.start_date)}
+                          <span className="font-bold">{role.name}</span> · {member.name} · {shortDate(x.start_date)}
                         </span>
                         <ActionButton
                           action={removeCompanyAssignment.bind(null, companyId, x.id)}
-                          label={`${strings.common.remove} ${role.name} ${member.display_name}`}
+                          label={`${strings.common.remove} ${role.name} ${member.name}`}
                           variant="icon-danger"
                         >
                           <Trash2 aria-hidden size={18} />
@@ -270,6 +329,36 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
               }
             />
           ) : null}
+        </Section>
+
+        <Section title={c.people} aside={<span className="text-base font-bold text-ink-2">{ctx.people.length}</span>}>
+          {ctx.people.length === 0 ? (
+            <p className="text-base text-ink-2">{c.noPeople}</p>
+          ) : (
+            <>
+              <p className="mb-2 text-sm text-ink-2">{c.peopleHint}</p>
+              <ul className="divide-y divide-rule border-y border-rule">
+                {peopleByTeam.map(([teamName, list]) => (
+                  <li key={teamName}>
+                    <details>
+                      <summary className="flex min-h-12 cursor-pointer items-center justify-between gap-3 py-2 text-base font-bold">
+                        <span className="truncate">{teamName}</span>
+                        <span className="text-sm font-normal text-ink-2">{list.length}</span>
+                      </summary>
+                      <ul className="pb-2 ps-3 text-sm">
+                        {list.map((p) => (
+                          <li key={p.team_member_id} className="py-0.5">
+                            {p.name}
+                            {!p.joined ? <span className="ms-1.5 text-xs text-ink-2">({c.notJoined})</span> : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </details>
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
         </Section>
 
         <Section title={c.members} aside={<span className="text-base font-bold text-ink-2">{ctx.members.length}</span>}>

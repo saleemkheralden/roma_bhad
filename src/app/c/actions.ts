@@ -55,6 +55,33 @@ export async function addTeamToCompany(companyId: number, _p: ActionResult, form
   return { ok: true, message: c.teamAdded((data as { team_name?: string } | null)?.team_name ?? "") };
 }
 
+/** One tap: a team I admin goes into a company I admin. */
+export async function addMyTeamToCompany(companyId: number, teamId: number) {
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("company_add_my_team", { p_company_id: companyId, p_team_id: teamId });
+  if (error?.code === "23505") return { error: c.teamTaken };
+  if (error) return fail(error);
+  refresh();
+  return { ok: true };
+}
+
+/** Open a new team directly inside the company (the company admin becomes its admin). */
+export async function createTeamInCompany(companyId: number, _p: ActionResult, formData: FormData): Promise<ActionResult> {
+  const name = text(formData, "name");
+  const first = text(formData, "first_name");
+  if (!name || !first) return { error: strings.common.genericError };
+  const supabase = await createClient();
+  const { error } = await supabase.rpc("create_team_in_company", {
+    p_company_id: companyId,
+    p_name: name,
+    p_first_name: first,
+    p_last_name: text(formData, "last_name"),
+  });
+  if (error) return fail(error);
+  refresh();
+  return { ok: true, message: c.teamCreated(name) };
+}
+
 export async function removeTeamFromCompany(companyId: number, teamId: number) {
   const supabase = await createClient();
   const { error } = await supabase.rpc("company_remove_team", { p_company_id: companyId, p_team_id: teamId });
@@ -112,15 +139,18 @@ export async function removeCompanyRole(companyId: number, roleId: number) {
 
 export async function addCompanyAssignment(companyId: number, _p: ActionResult, formData: FormData) {
   const roleId = Number(text(formData, "role_id"));
-  const memberId = Number(text(formData, "member_id"));
+  // "m:<id>" = company staff, "t:<id>" = a cadet of one of the company's teams.
+  const [kind, rawId] = text(formData, "person").split(":");
+  const personId = Number(rawId);
   const start = text(formData, "start_date");
   const end = text(formData, "end_date") || start;
-  if (!roleId || !memberId || !start || end < start) return { error: strings.common.genericError };
+  if (!roleId || !personId || (kind !== "m" && kind !== "t") || !start || end < start) return { error: strings.common.genericError };
   return run((db) =>
     db.from("company_role_assignments").insert({
       company_id: companyId,
       role_id: roleId,
-      member_id: memberId,
+      member_id: kind === "m" ? personId : null,
+      team_member_id: kind === "t" ? personId : null,
       start_date: start,
       end_date: end,
     }),
