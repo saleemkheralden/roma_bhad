@@ -20,7 +20,7 @@ async function exportMe(db: Db, teamId: number, userId: string) {
     db.from("team_members").select("id, first_name, last_name, nickname, is_admin, is_staff, created_at").eq("team_id", teamId).eq("user_id", userId),
   );
   const memberId = me[0]?.id ?? -1;
-  const [privateTasks, completions, lanes, settings] = await Promise.all([
+  const [privateTasks, completions, ticks, lanes, settings] = await Promise.all([
     rows(
       db
         .from("tasks")
@@ -30,10 +30,11 @@ async function exportMe(db: Db, teamId: number, userId: string) {
         .eq("owner_id", userId),
     ),
     rows(db.from("task_completions").select("task_id, done_at").eq("team_id", teamId).eq("member_id", memberId)),
+    rows(db.from("task_checklist_ticks").select("item_id, done_at").eq("team_id", teamId).eq("member_id", memberId)),
     rows(db.from("task_lanes").select("task_id, lane, position").eq("team_id", teamId)),
     rows(db.from("user_settings").select("task_layout")),
   ]);
-  return { roster_entry: me[0] ?? null, private_tasks: privateTasks, my_task_completions: completions, my_board: lanes, my_settings: settings[0] ?? null };
+  return { roster_entry: me[0] ?? null, private_tasks: privateTasks, my_task_completions: completions, my_checklist_ticks: ticks, my_board: lanes, my_settings: settings[0] ?? null };
 }
 
 async function exportTeam(db: Db, teamId: number) {

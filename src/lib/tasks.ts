@@ -118,13 +118,15 @@ export function dayKey(t: Pick<TaskLike, "due_on">, today: string): string {
 }
 
 /**
- * Mirrors private.checklist_access (the database still decides): the owner edits a private
- * task's steps, command edits a team task's, and the assignee may tick theirs. Closed: read-only.
+ * Mirrors private.checklist_access and can_tick_own_step (the database still decides): the owner
+ * edits a private task's steps, command edits a team task's, the assignee ticks theirs, and on a
+ * team-wide task every cadet ticks their own copy. Closed: read-only.
  */
 export function checklistAccess(t: TaskLike, myMemberId: number | null, canCommand: boolean): ChecklistAccess {
   if (t.status !== "open") return "read";
   if (t.visibility === "private" || canCommand) return "edit";
-  return myMemberId !== null && t.assignee_member_id === myMemberId ? "tick" : "read";
+  if (myMemberId === null) return "read";
+  return isTeamWide(t) || t.assignee_member_id === myMemberId ? "tick" : "read";
 }
 
 /** Steps in their saved order (position, then creation order). */

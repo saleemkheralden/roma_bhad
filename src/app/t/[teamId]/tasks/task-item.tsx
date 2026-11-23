@@ -5,6 +5,7 @@ import {
   addChecklistSteps,
   removeChecklistStep,
   setChecklistStepDone,
+  setMyChecklistStepDone,
   setCompletion,
   setTaskDone,
   updateTask,
@@ -26,13 +27,18 @@ export type TaskContext = {
 
 /** A task's steps with the viewer's access, bound to its actions. Shared by list rows and board cards. */
 export function ChecklistFor({ task, ctx }: { task: Task; ctx: Pick<TaskContext, "teamId" | "myId" | "canCommand"> }) {
+  // Team-wide task: every cadet (command too) ticks their own copy of the steps.
+  const setDone =
+    isTeamWide(task) && ctx.myId !== null
+      ? setMyChecklistStepDone.bind(null, ctx.teamId, ctx.myId)
+      : setChecklistStepDone.bind(null, ctx.teamId);
   return (
     <TaskChecklist
       title={task.title}
       steps={sortSteps(task.task_checklist_items ?? [])}
       access={checklistAccess(task, ctx.myId, ctx.canCommand)}
       taskOpen={task.status === "open"}
-      setDone={setChecklistStepDone.bind(null, ctx.teamId)}
+      setDone={setDone}
       remove={removeChecklistStep.bind(null, ctx.teamId)}
       add={addChecklistSteps.bind(null, ctx.teamId, task.id)}
     />
