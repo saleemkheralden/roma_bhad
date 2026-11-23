@@ -269,7 +269,7 @@ try {
     time: "14:00",
     steps: ["1. לאסוף סיכומים", "2. לכתוב טיוטה", "3. להגיש"],
   });
-  await newTask({ title: "למלא משוב קורס", team: true, due: tomorrowIso });
+  await newTask({ title: "למלא משוב קורס", team: true, due: tomorrowIso, steps: ["לענות על השאלון", "לשלוח"] });
   await newTask({ title: "להתקשר הביתה", team: false, due: todayIso, steps: ["לבדוק מתי נוח", "להתקשר"] });
   await a.goto(`${BASE}/t/${teamId}/tasks?view=team`);
   await a.getByText("להגיש סיכום שיעור").first().waitFor();
@@ -435,6 +435,18 @@ try {
   await b.reload();
   await b.locator("li", { has: bTask }).first().getByText("1/3 שלבים").waitFor();
   step("B ticks a step of their task (1/3, persisted), cannot add or remove steps");
+  // Team-wide task: each cadet ticks their own copy of the steps; B's tick is not A's.
+  const bWide = b.locator("li", { has: b.getByRole("checkbox", { name: /סימון החלק שלי כבוצע: למלא משוב קורס/ }) }).first();
+  await bWide.getByRole("button", { name: /0\/2 שלבים/ }).click();
+  await bWide.getByRole("checkbox", { name: "סימון השלב כבוצע: לענות על השאלון" }).click();
+  await bWide.getByText("1/2 שלבים").waitFor();
+  await b.waitForTimeout(800);
+  await b.reload();
+  await b.locator("li", { has: b.getByRole("checkbox", { name: /סימון החלק שלי כבוצע: למלא משוב קורס/ }) }).first().getByText("1/2 שלבים").waitFor();
+  await a.goto(`${BASE}/t/${teamId}/tasks`);
+  const aWide = a.locator("li", { has: a.getByRole("checkbox", { name: /למלא משוב קורס/ }) }).first();
+  await aWide.getByText("0/2 שלבים").waitFor();
+  step("team-wide steps are ticked per cadet (B 1/2, A still 0/2)");
   // Team-wide task: B marks their own part, and can't mark anyone else.
   await b.getByRole("checkbox", { name: /סימון החלק שלי כבוצע: למלא משוב קורס/ }).click();
   await b.getByText("1/13 סיימו").first().waitFor();

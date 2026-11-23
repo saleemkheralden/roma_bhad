@@ -40,7 +40,8 @@ const team = { ...base, visibility: "team", status: "open", assignee_member_id: 
 ok(() => assert.equal(checklistAccess(team, 1, true), "edit")); // command
 ok(() => assert.equal(checklistAccess(team, 7, false), "tick")); // assignee
 ok(() => assert.equal(checklistAccess(team, 8, false), "read")); // teammate
-ok(() => assert.equal(checklistAccess({ ...team, assignee_member_id: null }, 7, false), "read")); // team-wide
+ok(() => assert.equal(checklistAccess({ ...team, assignee_member_id: null }, 7, false), "tick")); // team-wide: my own ticks
+ok(() => assert.equal(checklistAccess({ ...team, assignee_member_id: null }, null, false), "read")); // not on the roster
 ok(() => assert.equal(checklistAccess({ ...base, visibility: "private", status: "open", assignee_member_id: null }, 7, false), "edit"));
 ok(() => assert.equal(checklistAccess({ ...team, status: "done" }, 1, true), "read")); // closed
 

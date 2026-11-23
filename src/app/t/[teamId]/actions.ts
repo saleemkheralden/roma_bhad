@@ -408,6 +408,15 @@ export async function setChecklistStepDone(teamId: number, itemId: number, done:
   );
 }
 
+/** Tick or untick my own copy of a team-wide task's step (each cadet has their own ticks; RLS). */
+export async function setMyChecklistStepDone(teamId: number, memberId: number, itemId: number, done: boolean) {
+  return run((db) =>
+    done
+      ? db.from("task_checklist_ticks").upsert({ item_id: itemId, member_id: memberId, team_id: teamId }, { ignoreDuplicates: true })
+      : db.from("task_checklist_ticks").delete().eq("item_id", itemId).eq("member_id", memberId),
+  );
+}
+
 export async function removeChecklistStep(teamId: number, itemId: number) {
   return run((db) =>
     db.from("task_checklist_items").delete({ count: "exact" }).eq("team_id", teamId).eq("id", itemId),

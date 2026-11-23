@@ -142,13 +142,20 @@ export async function getTasks(teamId: number) {
   const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString();
   const { data, error } = await supabase
     .from("tasks")
-    .select("*, task_completions(member_id), task_checklist_items(id, text, position, done)")
+    .select("*, task_completions(member_id), task_checklist_items(id, text, position, done, task_checklist_ticks(member_id))")
     .eq("team_id", teamId)
     .or(`status.eq.open,done_at.gte.${weekAgo}`)
     .order("due_on", { ascending: true, nullsFirst: false })
     .limit(300);
   if (error) throw error;
-  return data ?? [];
+  // A team-wide task's steps are ticked per cadet: "done" is my own tick (RLS returns only mine).
+  return (data ?? []).map((t) => ({
+    ...t,
+    task_checklist_items: t.task_checklist_items.map(({ task_checklist_ticks: ticks, ...step }) => ({
+      ...step,
+      done: t.visibility === "team" && t.assignee_member_id === null ? ticks.length > 0 : step.done,
+    })),
+  }));
 }
 
 /** My board placements (lane + order) for this team's tasks. Private to me by RLS. */
