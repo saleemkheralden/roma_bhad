@@ -435,6 +435,15 @@ export const strings = {
     leave: "ניתוק מהגדוד (אם הפלוגה נוספה בטעות)",
     confirmLeave: "לנתק את הפלוגה מהגדוד?",
   },
+  roleEditing: {
+    edit: "עריכה",
+    editRole: (name: string) => `עריכת התפקיד ${name}`,
+    editAssignment: (role: string, person: string) => `עריכת השיבוץ של ${person} ל${role}`,
+    isCommand: "תפקיד פיקודי",
+    isCommandHint: "מי שבתפקיד מקבל/ת הרשאות: נוכחות, משימות וניהול השיבוצים.",
+    datesHint: "אפשר להאריך, לקצר או להזיז את התאריכים, ולהחליף את מי שבתפקיד.",
+    badDates: "תאריך הסיום לא יכול להיות לפני תאריך ההתחלה.",
+  },
   calendar: {
     title: "יומן",
     settings: "יומן הצוות",

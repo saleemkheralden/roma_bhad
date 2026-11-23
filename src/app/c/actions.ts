@@ -157,6 +157,45 @@ export async function addCompanyAssignment(companyId: number, _p: ActionResult, 
   );
 }
 
+export async function updateCompanyRole(companyId: number, roleId: number, _p: ActionResult, formData: FormData) {
+  const name = text(formData, "name");
+  if (!name) return { error: strings.common.genericError };
+  return run((db) =>
+    db
+      .from("company_roles")
+      .update({ name, is_command: formData.get("is_command") === "on" }, { count: "exact" })
+      .eq("company_id", companyId)
+      .eq("id", roleId),
+  );
+}
+
+export async function updateCompanyAssignment(companyId: number, assignmentId: number, _p: ActionResult, formData: FormData) {
+  const roleId = Number(text(formData, "role_id"));
+  // "m:<id>" = staff, "t:<id>" = a cadet of one of the unit's teams.
+  const [kind, rawId] = text(formData, "person").split(":");
+  const personId = Number(rawId);
+  const start = text(formData, "start_date");
+  const end = text(formData, "end_date") || start;
+  if (!roleId || !personId || (kind !== "m" && kind !== "t") || !start) return { error: strings.common.genericError };
+  if (end < start) return { error: strings.roleEditing.badDates };
+  return run((db) =>
+    db
+      .from("company_role_assignments")
+      .update(
+        {
+          role_id: roleId,
+          member_id: kind === "m" ? personId : null,
+          team_member_id: kind === "t" ? personId : null,
+          start_date: start,
+          end_date: end,
+        },
+        { count: "exact" },
+      )
+      .eq("company_id", companyId)
+      .eq("id", assignmentId),
+  );
+}
+
 export async function removeCompanyAssignment(companyId: number, assignmentId: number) {
   return run((db) =>
     db.from("company_role_assignments").delete({ count: "exact" }).eq("company_id", companyId).eq("id", assignmentId),

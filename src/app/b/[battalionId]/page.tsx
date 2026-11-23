@@ -10,12 +10,15 @@ import { Section, TallyBar } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
+import { AssignmentEditForm, EditRow, RoleEditForm } from "@/components/role-editing";
 import { PlacesMenu } from "@/components/places-menu";
 import {
   addBattalionAssignment,
   addBattalionRole,
   removeBattalionAssignment,
   removeBattalionRole,
+  updateBattalionAssignment,
+  updateBattalionRole,
   addMyCompanyToBattalion,
   createCompanyInBattalion,
   moveTeam,
@@ -109,6 +112,26 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
       new Map<string, typeof ctx.people>(),
     ),
   ];
+
+  // Who can hold a role, for the add and edit forms.
+  const personOptions = (
+    <>
+      {ctx.members.length ? (
+        <optgroup label={b.staffGroup}>
+          {ctx.members.map((m) => (
+            <option key={m.id} value={`m:${m.id}`}>{m.display_name}</option>
+          ))}
+        </optgroup>
+      ) : null}
+      {peopleByTeam.map(([group, list]) => (
+        <optgroup key={group} label={group}>
+          {list.map((p) => (
+            <option key={p.team_member_id} value={`t:${p.team_member_id}`}>{p.name}</option>
+          ))}
+        </optgroup>
+      ))}
+    </>
+  );
 
   return (
     <>
@@ -302,20 +325,7 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
                     </SelectField>
                     <SelectField label={strings.team.member} name="person" required defaultValue="">
                       <option value="" disabled>—</option>
-                      {ctx.members.length ? (
-                        <optgroup label={b.staffGroup}>
-                          {ctx.members.map((m) => (
-                            <option key={m.id} value={`m:${m.id}`}>{m.display_name}</option>
-                          ))}
-                        </optgroup>
-                      ) : null}
-                      {peopleByTeam.map(([group, list]) => (
-                        <optgroup key={group} label={group}>
-                          {list.map((p) => (
-                            <option key={p.team_member_id} value={`t:${p.team_member_id}`}>{p.name}</option>
-                          ))}
-                        </optgroup>
-                      ))}
+                      {personOptions}
                     </SelectField>
                     <Field label={strings.team.from} name="start_date" type="date" required defaultValue={ctx.today} />
                     <Field label={strings.team.to} name="end_date" type="date" required defaultValue={ctx.today} />
@@ -325,20 +335,38 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
               }
               remove={
                 assignments.length ? (
-                  <ul className="flex flex-col gap-2">
+                  <ul className="flex flex-col gap-1">
                     {assignments.map(({ a: x, role, member }) => (
-                      <li key={x.id} className="flex items-center justify-between gap-3">
-                        <span className="truncate text-sm">
-                          <span className="font-bold">{role.name}</span> · {member.name} · {shortDate(x.start_date)}
-                        </span>
-                        <ActionButton
-                          action={removeBattalionAssignment.bind(null, battalionId, x.id)}
-                          label={`${strings.common.remove} ${role.name} ${member.name}`}
-                          variant="icon-danger"
-                        >
-                          <Trash2 aria-hidden size={18} />
-                        </ActionButton>
-                      </li>
+                      <EditRow
+                        key={x.id}
+                        editLabel={strings.roleEditing.editAssignment(role.name, member.name)}
+                        summary={
+                          <>
+                            <span className="font-bold">{role.name}</span> · {member.name} · {shortDate(x.start_date)}
+                            {x.end_date !== x.start_date ? `–${shortDate(x.end_date)}` : ""}
+                          </>
+                        }
+                        remove={
+                          <ActionButton
+                            action={removeBattalionAssignment.bind(null, battalionId, x.id)}
+                            label={`${strings.common.remove} ${role.name} ${member.name}`}
+                            variant="icon-danger"
+                          >
+                            <Trash2 aria-hidden size={18} />
+                          </ActionButton>
+                        }
+                      >
+                        <AssignmentEditForm
+                          action={updateBattalionAssignment.bind(null, battalionId, x.id)}
+                          roles={ctx.roles}
+                          roleId={role.id}
+                          personName="person"
+                          personDefault={x.member_id ? `m:${x.member_id}` : `t:${x.team_member_id}`}
+                          personOptions={personOptions}
+                          start={x.start_date}
+                          end={x.end_date}
+                        />
+                      </EditRow>
                     ))}
                   </ul>
                 ) : null
@@ -374,19 +402,25 @@ async function Battalion({ params }: { params: Promise<{ battalionId: string }> 
                 }
                 remove={
                   ctx.roles.length ? (
-                    <ul className="flex flex-col gap-2">
+                    <ul className="flex flex-col gap-1">
                       {ctx.roles.map((r) => (
-                        <li key={r.id} className="flex items-center justify-between gap-3">
-                          <span className="text-sm font-bold">{r.name}</span>
-                          <ActionButton
-                            action={removeBattalionRole.bind(null, battalionId, r.id)}
-                            confirm={`${strings.common.remove}: ${r.name}?`}
-                            label={`${strings.common.remove} ${r.name}`}
-                            variant="icon-danger"
-                          >
-                            <Trash2 aria-hidden size={18} />
-                          </ActionButton>
-                        </li>
+                        <EditRow
+                          key={r.id}
+                          editLabel={strings.roleEditing.editRole(r.name)}
+                          summary={<span className="font-bold">{r.name}</span>}
+                          remove={
+                            <ActionButton
+                              action={removeBattalionRole.bind(null, battalionId, r.id)}
+                              confirm={`${strings.common.remove}: ${r.name}?`}
+                              label={`${strings.common.remove} ${r.name}`}
+                              variant="icon-danger"
+                            >
+                              <Trash2 aria-hidden size={18} />
+                            </ActionButton>
+                          }
+                        >
+                          <RoleEditForm action={updateBattalionRole.bind(null, battalionId, r.id)} name={r.name} isCommand={r.is_command} />
+                        </EditRow>
                       ))}
                     </ul>
                   ) : null

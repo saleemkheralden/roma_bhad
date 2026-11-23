@@ -10,6 +10,7 @@ import { Section } from "@/components/section";
 import { ActionForm, Field, SelectField, SubmitButton, TextArea } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
+import { AssignmentEditForm, EditRow, RoleEditForm } from "@/components/role-editing";
 import { PushToggle } from "@/components/push-toggle";
 import { getTeamCompany } from "@/lib/company-data";
 import { unlinkTeam } from "../../../c/actions";
@@ -26,6 +27,8 @@ import {
   removeIntegration,
   removeMember,
   removeRole,
+  updateAssignment,
+  updateRole,
   setMemberFlag,
   updateMember,
 } from "../actions";
@@ -197,20 +200,40 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
             }
             remove={
               assignments.length > 0 ? (
-                <ul className="flex flex-col gap-2">
+                <ul className="flex flex-col gap-1">
                   {assignments.map((d) => (
-                    <li key={d.assignmentId} className="flex items-center justify-between gap-3">
-                      <span className="truncate text-sm">
-                        <span className="font-bold">{d.role.name}</span> · {fullName(d.member)} · {shortDate(d.startDate)}
-                      </span>
-                      <ActionButton
-                        action={removeAssignment.bind(null, teamId, d.assignmentId)}
-                        label={`${strings.common.remove} ${d.role.name} ${fullName(d.member)}`}
-                        variant="icon-danger"
-                      >
-                        <Trash2 aria-hidden size={18} />
-                      </ActionButton>
-                    </li>
+                    <EditRow
+                      key={d.assignmentId}
+                      editLabel={strings.roleEditing.editAssignment(d.role.name, fullName(d.member))}
+                      summary={
+                        <>
+                          <span className="font-bold">{d.role.name}</span> · {fullName(d.member)} · {shortDate(d.startDate)}
+                          {d.endDate !== d.startDate ? `–${shortDate(d.endDate)}` : ""}
+                        </>
+                      }
+                      remove={
+                        <ActionButton
+                          action={removeAssignment.bind(null, teamId, d.assignmentId)}
+                          label={`${strings.common.remove} ${d.role.name} ${fullName(d.member)}`}
+                          variant="icon-danger"
+                        >
+                          <Trash2 aria-hidden size={18} />
+                        </ActionButton>
+                      }
+                    >
+                      <AssignmentEditForm
+                        action={updateAssignment.bind(null, teamId, d.assignmentId)}
+                        roles={ctx.roles}
+                        roleId={d.role.id}
+                        personName="member_id"
+                        personDefault={String(d.member.id)}
+                        personOptions={ctx.roster.map((m) => (
+                          <option key={m.id} value={m.id}>{fullName(m)}</option>
+                        ))}
+                        start={d.startDate}
+                        end={d.endDate}
+                      />
+                    </EditRow>
                   ))}
                 </ul>
               ) : null
@@ -239,19 +262,25 @@ async function Team({ params }: { params: Promise<{ teamId: string }> }) {
               </ActionForm>
             }
             remove={
-              <ul className="flex flex-col gap-2">
+              <ul className="flex flex-col gap-1">
                 {ctx.roles.map((r) => (
-                  <li key={r.id} className="flex items-center justify-between gap-3">
-                    <span className="text-sm font-bold">{r.name}</span>
-                    <ActionButton
-                      action={removeRole.bind(null, teamId, r.id)}
-                      confirm={`${strings.common.remove}: ${r.name}?`}
-                      label={`${strings.common.remove} ${r.name}`}
-                      variant="icon-danger"
-                    >
-                      <Trash2 aria-hidden size={18} />
-                    </ActionButton>
-                  </li>
+                  <EditRow
+                    key={r.id}
+                    editLabel={strings.roleEditing.editRole(r.name)}
+                    summary={<span className="font-bold">{r.name}</span>}
+                    remove={
+                      <ActionButton
+                        action={removeRole.bind(null, teamId, r.id)}
+                        confirm={`${strings.common.remove}: ${r.name}?`}
+                        label={`${strings.common.remove} ${r.name}`}
+                        variant="icon-danger"
+                      >
+                        <Trash2 aria-hidden size={18} />
+                      </ActionButton>
+                    }
+                  >
+                    <RoleEditForm action={updateRole.bind(null, teamId, r.id)} name={r.name} isCommand={r.is_command} />
+                  </EditRow>
                 ))}
               </ul>
             }
