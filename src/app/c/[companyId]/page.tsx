@@ -12,8 +12,10 @@ import { ActionForm, Field, SelectField, SubmitButton } from "@/components/ui";
 import { ActionButton, CopyButton } from "@/components/action-button";
 import { EditArea } from "@/components/edit-area";
 import { PlacesMenu } from "@/components/places-menu";
-import { getMyPlaces } from "@/lib/places";
+import { getMyAdminUnits, getMyPlaces } from "@/lib/places";
 import {
+  addMyTeamToCompany,
+  createTeamInCompany,
   addTeamToCompany,
   removeTeamFromCompany,
   addCompanyAssignment,
@@ -96,7 +98,14 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
   const companyId = Number((await params).companyId);
   // Context first: a non-member gets "not found" before the dashboard's permission check runs.
   const ctx = await getCompanyContext(companyId);
-  const [teams, myTeams, places] = await Promise.all([getCompanyDashboard(companyId), getMyTeams(), getMyPlaces()]);
+  const [teams, myTeams, places, adminUnits] = await Promise.all([
+    getCompanyDashboard(companyId),
+    getMyTeams(),
+    getMyPlaces(),
+    getMyAdminUnits(),
+  ]);
+  // Teams I admin that aren't in this company yet: one tap to add.
+  const myOtherTeams = adminUnits.teams.filter((x) => x.company_id !== companyId);
   const myTeamIds = new Set(myTeams.map((x) => x.id));
   await connection();
   const now = new Date();
@@ -167,24 +176,60 @@ async function Company({ params }: { params: Promise<{ companyId: string }> }) {
             <EditArea
               title={c.manageTeams}
               add={
-                <ActionForm action={addTeamToCompany.bind(null, companyId)} className="flex flex-col gap-2">
-                  <p className="text-sm text-ink-2">{c.addTeamHint}</p>
-                  <div className="flex items-end gap-2">
-                    <div className="flex-1">
-                      <Field
-                        label={c.teamCode}
-                        name="code"
-                        required
-                        dir="ltr"
-                        maxLength={8}
-                        autoCapitalize="characters"
-                        autoComplete="off"
-                        className="tracking-[0.2em] uppercase"
-                      />
+                <div className="flex flex-col gap-5">
+                  {myOtherTeams.length ? (
+                    <div>
+                      <p className="text-sm font-bold">{c.myAdminTeams}</p>
+                      <p className="text-xs text-ink-2">{c.myAdminTeamsHint}</p>
+                      <ul className="mt-2 flex flex-col gap-2">
+                        {myOtherTeams.map((x) => (
+                          <li key={x.id} className="flex items-center justify-between gap-3">
+                            <span className="min-w-0 truncate text-sm font-bold">
+                              {x.name}
+                              {x.company_id ? <span className="ms-1.5 text-xs font-normal text-ink-2">({c.inOtherCompany})</span> : null}
+                            </span>
+                            <ActionButton action={addMyTeamToCompany.bind(null, companyId, x.id)} variant="outline">
+                              {c.addThis}
+                            </ActionButton>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
-                    <SubmitButton variant="outline">{c.addTeam}</SubmitButton>
-                  </div>
-                </ActionForm>
+                  ) : null}
+
+                  <ActionForm action={createTeamInCompany.bind(null, companyId)} className="flex flex-col gap-2">
+                    <p className="text-sm font-bold">{c.newTeamInCompany}</p>
+                    <p className="text-xs text-ink-2">{c.newTeamHint}</p>
+                    <Field label={strings.create.teamName} name="name" required maxLength={60} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <Field label={strings.create.yourFirstName} name="first_name" required maxLength={40} autoComplete="given-name" />
+                      <Field label={strings.create.yourLastName} name="last_name" maxLength={40} autoComplete="family-name" />
+                    </div>
+                    <SubmitButton variant="outline">{c.newTeamInCompany}</SubmitButton>
+                  </ActionForm>
+
+                  <details>
+                    <summary className="min-h-11 cursor-pointer py-2 text-sm font-bold underline">{c.withCode}</summary>
+                    <ActionForm action={addTeamToCompany.bind(null, companyId)} className="mt-2 flex flex-col gap-2">
+                      <p className="text-sm text-ink-2">{c.addTeamHint}</p>
+                      <div className="flex items-end gap-2">
+                        <div className="flex-1">
+                          <Field
+                            label={c.teamCode}
+                            name="code"
+                            required
+                            dir="ltr"
+                            maxLength={8}
+                            autoCapitalize="characters"
+                            autoComplete="off"
+                            className="tracking-[0.2em] uppercase"
+                          />
+                        </div>
+                        <SubmitButton variant="outline">{c.addTeam}</SubmitButton>
+                      </div>
+                    </ActionForm>
+                  </details>
+                </div>
               }
               remove={
                 teams.length ? (
