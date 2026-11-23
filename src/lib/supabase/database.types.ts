@@ -89,6 +89,64 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"battalion_role_assignments": {
+                  Row: {
+                    "battalion_id": number,"created_at": string,"end_date": string,"id": number,"member_id": number | null,"role_id": number,"start_date": string,"team_member_id": number | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "battalion_id": number,"created_at"?: string,"end_date": string,"id"?: never,"member_id"?: number | null,"role_id": number,"start_date": string,"team_member_id"?: number | null
+                  }
+                  Update: {
+                    "battalion_id"?: number,"created_at"?: string,"end_date"?: string,"id"?: never,"member_id"?: number | null,"role_id"?: number,"start_date"?: string,"team_member_id"?: number | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "battalion_role_assignments_battalion_id_fkey"
+      columns: ["battalion_id"]
+isOneToOne: false
+      referencedRelation: "battalions"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "battalion_role_assignments_member_id_battalion_id_fkey"
+      columns: ["member_id","battalion_id"]
+isOneToOne: false
+      referencedRelation: "battalion_members"
+      referencedColumns: ["id","battalion_id"]
+    },{
+      foreignKeyName: "battalion_role_assignments_role_id_battalion_id_fkey"
+      columns: ["role_id","battalion_id"]
+isOneToOne: false
+      referencedRelation: "battalion_roles"
+      referencedColumns: ["id","battalion_id"]
+    },{
+      foreignKeyName: "battalion_role_assignments_team_member_id_fkey"
+      columns: ["team_member_id"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"battalion_roles": {
+                  Row: {
+                    "battalion_id": number,"id": number,"is_command": boolean,"name": string,"sort_order": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "battalion_id": number,"id"?: never,"is_command"?: boolean,"name": string,"sort_order"?: number
+                  }
+                  Update: {
+                    "battalion_id"?: number,"id"?: never,"is_command"?: boolean,"name"?: string,"sort_order"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "battalion_roles_battalion_id_fkey"
+      columns: ["battalion_id"]
+isOneToOne: false
+      referencedRelation: "battalions"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"battalions": {
                   Row: {
                     "created_at": string,"created_by": string | null,"id": number,"invite_code": string,"name": string
@@ -173,6 +231,12 @@ isOneToOne: false
 isOneToOne: false
       referencedRelation: "company_roles"
       referencedColumns: ["id","company_id"]
+    },{
+      foreignKeyName: "company_role_assignments_team_member_id_fkey"
+      columns: ["team_member_id"]
+isOneToOne: false
+      referencedRelation: "team_members"
+      referencedColumns: ["id"]
     }
                   ]
                 },"company_roles": {
@@ -476,29 +540,26 @@ isOneToOne: false
             "battalion_add_company":
 { Args: { "p_battalion_id": number,"p_company_code": string }; Returns: Json
                            },
+"battalion_add_my_company":
+{ Args: { "p_battalion_id": number,"p_company_id": number }; Returns: undefined
+                           },
 "battalion_dashboard":
+{ Args: { "p_battalion_id": number }; Returns: Json
+                           },
+"battalion_move_team":
+{ Args: { "p_battalion_id": number,"p_company_id": number,"p_team_id": number }; Returns: undefined
+                           },
+"battalion_people":
 { Args: { "p_battalion_id": number }; Returns: Json
                            },
 "battalion_remove_company":
 { Args: { "p_battalion_id": number,"p_company_id": number }; Returns: undefined
-                           },
-"battalion_add_my_company":
-{ Args: { "p_battalion_id": number,"p_company_id": number }; Returns: undefined
-                           },
-"battalion_move_team":
-{ Args: { "p_battalion_id": number,"p_company_id": number,"p_team_id": number }; Returns: undefined
                            },
 "battalion_structure":
 { Args: { "p_battalion_id": number }; Returns: Json
                            },
 "company_add_my_team":
 { Args: { "p_company_id": number,"p_team_id": number }; Returns: undefined
-                           },
-"create_company_in_battalion":
-{ Args: { "p_battalion_id": number,"p_display_name": string,"p_name": string }; Returns: number
-                           },
-"create_team_in_company":
-{ Args: { "p_company_id": number,"p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
                            },
 "company_add_team":
 { Args: { "p_company_id": number,"p_team_code": string }; Returns: Json
@@ -521,8 +582,14 @@ isOneToOne: false
 "create_company":
 { Args: { "p_display_name": string,"p_name": string,"p_team_id"?: number }; Returns: number
                            },
+"create_company_in_battalion":
+{ Args: { "p_battalion_id": number,"p_display_name": string,"p_name": string }; Returns: number
+                           },
 "create_team":
 { Args: { "p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
+                           },
+"create_team_in_company":
+{ Args: { "p_company_id": number,"p_first_name": string,"p_last_name"?: string,"p_name": string }; Returns: number
                            },
 "join_battalion":
 { Args: { "p_code": string,"p_display_name": string }; Returns: number

@@ -143,3 +143,52 @@ export async function removeBattalionMember(battalionId: number, memberId: numbe
   refresh();
   return { ok: true };
 }
+
+async function run(
+  write: (db: Awaited<ReturnType<typeof createClient>>) => PromiseLike<{ error: PostgrestError | null; count?: number | null }>,
+): Promise<ActionResult> {
+  const db = await createClient();
+  const { error, count } = await write(db);
+  if (error) return fail(error);
+  if (count === 0) return { error: strings.common.noPermission };
+  refresh();
+  return { ok: true };
+}
+
+// Battalion roles: admins or today's battalion command role-holder (RLS: can_manage_battalion).
+
+export async function addBattalionRole(battalionId: number, _p: ActionResult, formData: FormData) {
+  const name = text(formData, "name");
+  if (!name) return { error: strings.common.genericError };
+  return run((db) => db.from("battalion_roles").insert({ battalion_id: battalionId, name, sort_order: 100 }));
+}
+
+export async function removeBattalionRole(battalionId: number, roleId: number) {
+  return run((db) => db.from("battalion_roles").delete({ count: "exact" }).eq("battalion_id", battalionId).eq("id", roleId));
+}
+
+export async function addBattalionAssignment(battalionId: number, _p: ActionResult, formData: FormData) {
+  const roleId = Number(text(formData, "role_id"));
+  // "m:<id>" = battalion staff, "t:<id>" = a cadet of one of the battalion's teams.
+  const [kind, rawId] = text(formData, "person").split(":");
+  const personId = Number(rawId);
+  const start = text(formData, "start_date");
+  const end = text(formData, "end_date") || start;
+  if (!roleId || !personId || (kind !== "m" && kind !== "t") || !start || end < start) return { error: strings.common.genericError };
+  return run((db) =>
+    db.from("battalion_role_assignments").insert({
+      battalion_id: battalionId,
+      role_id: roleId,
+      member_id: kind === "m" ? personId : null,
+      team_member_id: kind === "t" ? personId : null,
+      start_date: start,
+      end_date: end,
+    }),
+  );
+}
+
+export async function removeBattalionAssignment(battalionId: number, assignmentId: number) {
+  return run((db) =>
+    db.from("battalion_role_assignments").delete({ count: "exact" }).eq("battalion_id", battalionId).eq("id", assignmentId),
+  );
+}
