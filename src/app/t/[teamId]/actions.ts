@@ -171,6 +171,35 @@ export async function addAssignment(teamId: number, _p: ActionResult, formData: 
   return result;
 }
 
+export async function updateRole(teamId: number, roleId: number, _p: ActionResult, formData: FormData) {
+  const name = text(formData, "name");
+  if (!name) return { error: strings.common.genericError };
+  return run((db) =>
+    db
+      .from("team_roles")
+      .update({ name, is_command: formData.get("is_command") === "on" }, { count: "exact" })
+      .eq("team_id", teamId)
+      .eq("id", roleId),
+  );
+}
+
+/** Change who holds a role and when (extend, shorten, move, or hand it to someone else). */
+export async function updateAssignment(teamId: number, assignmentId: number, _p: ActionResult, formData: FormData) {
+  const roleId = Number(text(formData, "role_id"));
+  const memberId = Number(text(formData, "member_id"));
+  const start = text(formData, "start_date");
+  const end = text(formData, "end_date") || start;
+  if (!roleId || !memberId || !start) return { error: strings.common.genericError };
+  if (end < start) return { error: strings.roleEditing.badDates };
+  return run((db) =>
+    db
+      .from("role_assignments")
+      .update({ role_id: roleId, member_id: memberId, start_date: start, end_date: end }, { count: "exact" })
+      .eq("team_id", teamId)
+      .eq("id", assignmentId),
+  );
+}
+
 export async function removeAssignment(teamId: number, assignmentId: number) {
   return run((db) =>
     db.from("role_assignments").delete({ count: "exact" }).eq("team_id", teamId).eq("id", assignmentId),
